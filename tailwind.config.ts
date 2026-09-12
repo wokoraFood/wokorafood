@@ -9,8 +9,26 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        background: "var(--background)",
-        foreground: "var(--foreground)",
+        ink: "rgb(var(--ink) / <alpha-value>)",
+        charcoal: "rgb(var(--charcoal) / <alpha-value>)",
+        brand: {
+          red: "#E8272C",
+          gold: "#F5A623",
+          cream: "rgb(var(--cream) / <alpha-value>)",
+        },
+      },
+      fontFamily: {
+        display: ["var(--font-poppins)", "sans-serif"],
+        body: ["var(--font-inter)", "sans-serif"],
+        wall: ["var(--font-bebas)", "sans-serif"],
+      },
+      boxShadow: {
+        neon: "0 0 20px rgba(232, 39, 44, 0.45)",
+        gold: "0 0 18px rgba(245, 166, 35, 0.35)",
+      },
+      backgroundImage: {
+        "brand-glow":
+          "radial-gradient(ellipse at top, rgba(232,39,44,0.22), transparent 55%), radial-gradient(ellipse at bottom right, rgba(245,166,35,0.12), transparent 45%)",
       },
     },
   },

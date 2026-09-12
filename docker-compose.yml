@@ -1,0 +1,16 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: wokora-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: wokora
+      POSTGRES_PASSWORD: wokora
+      POSTGRES_DB: wokorafoods
+    ports:
+      - "5432:5432"
+    volumes:
+      - wokora_pg:/var/lib/postgresql/data
+
+volumes:
+  wokora_pg:

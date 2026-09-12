@@ -1,0 +1,154 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  // Local default is SQLite so `npm run db:push` works without Docker.
+  // For Neon / Railway / Render production, switch provider to "postgresql"
+  // and set DATABASE_URL to your hosted Postgres URI.
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String
+  phone         String    @unique
+  email         String?   @unique
+  passwordHash  String
+  role          String    @default("customer")
+  loyaltyPoints Int       @default(0)
+  phoneVerified Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  orders        Order[]
+  addresses     Address[]
+  notifications Notification[]
+}
+
+model Address {
+  id      String @id @default(cuid())
+  userId  String
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  label   String
+  line1   String
+  city    String
+  pincode String
+}
+
+model Category {
+  id        String     @id @default(cuid())
+  name      String
+  slug      String     @unique
+  iconUrl   String?
+  sortOrder Int        @default(0)
+  items     MenuItem[]
+}
+
+model MenuItem {
+  id          String      @id @default(cuid())
+  name        String
+  slug        String      @unique
+  categoryId  String
+  category    Category    @relation(fields: [categoryId], references: [id])
+  description String
+  price       Float
+  imageUrl    String
+  isVeg       Boolean     @default(true)
+  isAvailable Boolean     @default(true)
+  isFeatured  Boolean     @default(false)
+  orderItems  OrderItem[]
+}
+
+model Order {
+  id             String     @id @default(cuid())
+  serialNumber   Int        @default(0)
+  userId         String
+  user           User       @relation(fields: [userId], references: [id])
+  tableNumber    String?
+  type           String     @default("dine_in")
+  status         String     @default("placed")
+  paymentStatus  String     @default("pending")
+  paymentMethod  String?
+  etaMinutes     Int?
+  etaSetAt       DateTime?
+  subtotal       Float
+  taxAmount      Float
+  totalAmount    Float
+  notes          String?
+  printedAt      DateTime?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+  items          OrderItem[]
+  printJobs      PrintJob[]
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  body      String
+  orderId   String?
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model OrderItem {
+  id           String   @id @default(cuid())
+  orderId      String
+  order        Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menuItemId   String
+  menuItem     MenuItem @relation(fields: [menuItemId], references: [id])
+  quantity     Int
+  priceAtOrder Float
+}
+
+model PrintJob {
+  id        String    @id @default(cuid())
+  orderId   String
+  order     Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  status    String    @default("pending")
+  payload   String
+  createdAt DateTime  @default(now())
+  printedAt DateTime?
+}
+
+model Newsletter {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  createdAt DateTime @default(now())
+}
+
+model SupportTicket {
+  id        String          @id @default(cuid())
+  userId    String?
+  name      String
+  phone     String
+  email     String?
+  subject   String
+  message   String
+  status    String          @default("open")
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+  replies   SupportReply[]
+}
+
+model SupportReply {
+  id         String        @id @default(cuid())
+  ticketId   String
+  ticket     SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  authorName String
+  authorRole String
+  message    String
+  createdAt  DateTime      @default(now())
+}
+
+model CafeSettings {
+  id      String @id @default("cafe")
+  name    String @default("Wokora Foods")
+  phone   String @default("+91 98765 43210")
+  email   String @default("hello@wokorafoods.com")
+  address String @default("12, Food Street, Koramangala 4th Block, Bengaluru 560034")
+  hours   String @default("11:00 AM – 11:00 PM")
+}
