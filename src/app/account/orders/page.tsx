@@ -13,7 +13,7 @@ type Order = {
   totalAmount: number;
   status: string;
   etaMinutes?: number | null;
-  items: { quantity: number; menuItem: { id: string; name: string; price: number; imageUrl: string; isVeg: boolean } }[];
+  items: { id?: string; quantity: number; customization?: string; menuItem: { id: string; name: string; price: number; imageUrl: string; isVeg: boolean } }[];
 };
 
 export default function CustomerOrdersPage() {
@@ -44,12 +44,15 @@ export default function CustomerOrdersPage() {
               <p className="font-display text-xl">{formatINR(order.totalAmount)}</p>
             </div>
             <div className="mt-4 flex gap-3 overflow-x-auto">
-              {order.items.map((item) => (
-                <div key={item.menuItem.id} className="w-28 shrink-0">
+              {order.items.map((item, index) => (
+                <div key={item.id || `${item.menuItem.id}-${index}`} className="w-28 shrink-0">
                   <div className="relative h-20 overflow-hidden rounded-xl">
                     <Image src={item.menuItem.imageUrl} alt={item.menuItem.name} fill className="object-cover" />
                   </div>
                   <p className="mt-1 truncate text-xs">{item.quantity} × {item.menuItem.name}</p>
+                  {item.customization ? (
+                    <p className="truncate text-[10px] text-brand-gold/80">{item.customization}</p>
+                  ) : null}
                 </div>
               ))}
             </div>

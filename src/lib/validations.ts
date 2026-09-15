@@ -23,6 +23,8 @@ export const orderSchema = z.object({
       z.object({
         menuItemId: z.string(),
         quantity: z.number().int().min(1).max(20),
+        selections: z.record(z.array(z.string())).optional(),
+        customization: z.string().max(240).optional(),
       })
     )
     .min(1, "Cart is empty"),

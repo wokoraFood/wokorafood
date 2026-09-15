@@ -1,78 +1,188 @@
-const pexels = (id: number) =>
-  `https://images.pexels.com/photos/${id}/pexels-photo-${id}.jpeg?auto=compress&cs=tinysrgb&w=900`;
+const categoryImage = (slug: string) => `/images/categories/${slug}.png`;
+const dishImage = (slug: string) => `/images/menu/${slug}.png`;
 
 export const MENU_CATEGORIES = [
-  { name: "Burger", slug: "burger", sortOrder: 1, emoji: "🍔", image: pexels(1639557) },
-  { name: "Momos", slug: "momos", sortOrder: 2, emoji: "🥟", image: pexels(5409015) },
-  { name: "Dimsum", slug: "dimsum", sortOrder: 3, emoji: "🍱", image: pexels(5409022) },
-  { name: "Spring Rolls", slug: "spring-rolls", sortOrder: 4, emoji: "🥠", image: pexels(725991) },
-  { name: "Noodles", slug: "noodles", sortOrder: 5, emoji: "🍜", image: pexels(2347311) },
-  { name: "Chilli Potato", slug: "chilli-potato", sortOrder: 6, emoji: "🌶️", image: pexels(1583884) },
-  { name: "Fried Rice", slug: "fried-rice", sortOrder: 7, emoji: "🍚", image: pexels(723198) },
-  { name: "Manchurian", slug: "manchurian", sortOrder: 8, emoji: "🥗", image: pexels(2474661) },
-  { name: "Pasta", slug: "pasta", sortOrder: 9, emoji: "🍝", image: pexels(1279330) },
-  { name: "Sandwich", slug: "sandwich", sortOrder: 10, emoji: "🥪", image: pexels(1603901) },
-  { name: "Wraps", slug: "wraps", sortOrder: 11, emoji: "🌯", image: pexels(461198) },
-  { name: "Mocktails", slug: "mocktails", sortOrder: 12, emoji: "🍹", image: pexels(1187766) },
-  { name: "Beverages", slug: "beverages", sortOrder: 13, emoji: "☕", image: pexels(312418) },
+  { name: "Burger", slug: "burger", sortOrder: 1, image: categoryImage("burger") },
+  { name: "Coffee", slug: "coffee", sortOrder: 2, image: categoryImage("coffee") },
+  { name: "Momos", slug: "momos", sortOrder: 3, image: categoryImage("momos") },
+  { name: "Spring Rolls", slug: "spring-rolls", sortOrder: 4, image: categoryImage("spring-rolls") },
+  { name: "Noodles", slug: "noodles", sortOrder: 5, image: categoryImage("noodles") },
+  { name: "Chilli Potato", slug: "chilli-potato", sortOrder: 6, image: categoryImage("chilli-potato") },
+  { name: "Fried Rice", slug: "fried-rice", sortOrder: 7, image: categoryImage("fried-rice") },
+  { name: "Wraps", slug: "wraps", sortOrder: 8, image: categoryImage("wraps") },
+  { name: "Chicken Lollipop", slug: "chicken-lollipop", sortOrder: 9, image: categoryImage("chicken-lollipop") },
 ] as const;
 
-export const MENU_ITEMS = [
-  { name: "Classic Chicken Burger", slug: "classic-chicken-burger", category: "burger", description: "Crispy chicken fillet, house sauce, lettuce and toasted bun.", price: 189, imageUrl: pexels(1639557), isVeg: false, isFeatured: true },
-  { name: "Peri Peri Burger", slug: "peri-peri-burger", category: "burger", description: "Spicy peri peri glaze, cheddar and pickled onions.", price: 219, imageUrl: pexels(1633578), isVeg: false, isFeatured: true },
-  { name: "Cheese Burst Burger", slug: "cheese-burst-burger", category: "burger", description: "Double cheese melt with a soft potato bun.", price: 199, imageUrl: pexels(2983101), isVeg: true },
-  { name: "Veggie Deluxe Burger", slug: "veggie-deluxe-burger", category: "burger", description: "Crispy veg patty, slaw and smoky chipotle mayo.", price: 169, imageUrl: pexels(3616956), isVeg: true },
-  { name: "Double Patty Beast", slug: "double-patty-beast", category: "burger", description: "Two smash patties, cheddar, pickles and Wokora sauce.", price: 279, imageUrl: pexels(70497), isVeg: false, isFeatured: true },
+export const ALLOWED_CATEGORY_SLUGS: string[] = MENU_CATEGORIES.map((row) => row.slug);
 
-  { name: "Steamed Veg Momos", slug: "steamed-veg-momos", category: "momos", description: "8 pieces, ginger-garlic filling, fiery red chutney.", price: 129, imageUrl: pexels(5409015), isVeg: true, isFeatured: true },
-  { name: "Chicken Momos", slug: "chicken-momos", category: "momos", description: "Juicy minced chicken, sesame dip.", price: 159, imageUrl: pexels(5409010), isVeg: false, isFeatured: true },
-  { name: "Tandoori Momos", slug: "tandoori-momos", category: "momos", description: "Charred, smoky, tossed in tandoori masala.", price: 179, imageUrl: pexels(5409023), isVeg: false },
-  { name: "Kurkure Momos", slug: "kurkure-momos", category: "momos", description: "Crispy fried wrap with cheese pull.", price: 169, imageUrl: pexels(5409012), isVeg: true },
+type MenuRow = {
+  name: string;
+  slug: string;
+  category: (typeof MENU_CATEGORIES)[number]["slug"];
+  description: string;
+  price: number;
+  imageUrl: string;
+  isVeg: boolean;
+  isFeatured?: boolean;
+};
 
-  { name: "Prawn Dimsum", slug: "prawn-dimsum", category: "dimsum", description: "Translucent wrappers, steamed to order.", price: 219, imageUrl: pexels(5409022), isVeg: false, isFeatured: true },
-  { name: "Veg Crystal Dimsum", slug: "veg-crystal-dimsum", category: "dimsum", description: "Water chestnut, mushroom and bamboo shoot.", price: 189, imageUrl: pexels(5409017), isVeg: true },
-  { name: "Chicken Siu Mai", slug: "chicken-siu-mai", category: "dimsum", description: "Open-top dumplings with soy-chilli oil.", price: 199, imageUrl: pexels(2664216), isVeg: false },
+function chickenName(category: MenuRow["category"], name: string) {
+  if (category === "burger") return name.replace(/Burger$/, "Chicken Burger");
+  if (category === "momos") return name.replace(/Momos$/, "Chicken Momos");
+  if (category === "spring-rolls") return name.replace(/Spring Rolls$/, "Chicken Spring Rolls");
+  if (category === "noodles") return `Chicken ${name}`;
+  if (category === "fried-rice") return name.replace(/Fried Rice$/, "Chicken Fried Rice");
+  if (category === "wraps") return name.replace(/Wrap$/, "Chicken Wrap");
+  if (category === "chilli-potato") return name.replace(/Chilli Potato$/, "Chilli Chicken Potato");
+  return `Chicken ${name}`;
+}
 
-  { name: "Veg Spring Rolls", slug: "veg-spring-rolls", category: "spring-rolls", description: "Golden rolls, cabbage slaw, sweet chilli.", price: 139, imageUrl: pexels(725991), isVeg: true, isFeatured: true },
-  { name: "Chicken Spring Rolls", slug: "chicken-spring-rolls", category: "spring-rolls", description: "Shredded chicken, peppers, crispy wrapper.", price: 159, imageUrl: pexels(955137), isVeg: false },
-  { name: "Cheese Spring Rolls", slug: "cheese-spring-rolls", category: "spring-rolls", description: "Molten cheese, herbs, honey chilli dust.", price: 149, imageUrl: pexels(4518843), isVeg: true },
+function chickenDescription(category: MenuRow["category"], description: string) {
+  const lead =
+    category === "burger"
+      ? "Juicy chicken patty. "
+      : category === "momos"
+        ? "Minced chicken filling. "
+        : category === "spring-rolls"
+          ? "Shredded chicken inside. "
+          : category === "noodles"
+            ? "Wok-tossed with chicken. "
+            : category === "fried-rice"
+              ? "Wok rice with chicken. "
+              : category === "wraps"
+                ? "Grilled chicken filling. "
+                : category === "chilli-potato"
+                  ? "Crispy potato tossed with chicken. "
+                  : "Chicken. ";
+  return `${lead}${description}`;
+}
 
-  { name: "Veg Hakka Noodles", slug: "veg-hakka-noodles", category: "noodles", description: "Street-style wok toss, crunchy vegetables.", price: 169, imageUrl: pexels(2347311), isVeg: true, isFeatured: true },
-  { name: "Chicken Hakka Noodles", slug: "chicken-hakka-noodles", category: "noodles", description: "Soy butter, spring onion, tender chicken.", price: 199, imageUrl: pexels(1907244), isVeg: false },
-  { name: "Schezwan Noodles", slug: "schezwan-noodles", category: "noodles", description: "Fiery schezwan oil and toasted garlic.", price: 189, imageUrl: pexels(7613568), isVeg: true },
-  { name: "Pan Fried Noodles", slug: "pan-fried-noodles", category: "noodles", description: "Crisp nest, gravy, wok vegetables.", price: 209, imageUrl: pexels(2664216), isVeg: false },
+function vegOnly(
+  category: MenuRow["category"],
+  name: string,
+  slug: string,
+  description: string,
+  price: number,
+  imageUrl: string,
+  options?: { isFeatured?: boolean }
+): MenuRow[] {
+  return [{ name, slug: `${slug}-veg`, category, description, price, imageUrl, isVeg: true, isFeatured: options?.isFeatured }];
+}
 
-  { name: "Honey Chilli Potato", slug: "honey-chilli-potato", category: "chilli-potato", description: "Crispy fingers, honey, sesame, spring onion.", price: 179, imageUrl: pexels(1583884), isVeg: true, isFeatured: true },
-  { name: "Dry Chilli Potato", slug: "dry-chilli-potato", category: "chilli-potato", description: "Indo-Chinese classic, extra crunch.", price: 169, imageUrl: pexels(1893555), isVeg: true },
-  { name: "Loaded Chilli Fries", slug: "loaded-chilli-fries", category: "chilli-potato", description: "Cheese, jalapeño, Wokora chilli dust.", price: 189, imageUrl: pexels(1896054), isVeg: true },
+function nvOnly(
+  category: MenuRow["category"],
+  name: string,
+  slug: string,
+  description: string,
+  price: number,
+  imageUrl: string,
+  options?: { isFeatured?: boolean }
+): MenuRow[] {
+  return [{ name, slug: `${slug}-nv`, category, description, price, imageUrl, isVeg: false, isFeatured: options?.isFeatured }];
+}
 
-  { name: "Chicken Fried Rice", slug: "chicken-fried-rice", category: "fried-rice", description: "Wok-charred rice, egg, spring onion.", price: 189, imageUrl: pexels(723198), isVeg: false, isFeatured: true },
-  { name: "Veg Fried Rice", slug: "veg-fried-rice", category: "fried-rice", description: "Garden veg, light soy, toasted garlic.", price: 159, imageUrl: pexels(1624487), isVeg: true },
-  { name: "Schezwan Fried Rice", slug: "schezwan-fried-rice", category: "fried-rice", description: "Red chilli paste, crunch, smoke.", price: 179, imageUrl: pexels(1640772), isVeg: true },
-  { name: "Egg Fried Rice", slug: "egg-fried-rice", category: "fried-rice", description: "Fluffy egg ribbons, white pepper.", price: 169, imageUrl: pexels(1410235), isVeg: false },
+function pair(
+  category: MenuRow["category"],
+  name: string,
+  slug: string,
+  description: string,
+  vegPrice: number,
+  imageUrl: string,
+  options?: { nvPrice?: number; isFeatured?: boolean; nvImageUrl?: string }
+): MenuRow[] {
+  const nvPrice = options?.nvPrice ?? vegPrice + 30;
+  const nvImageUrl = options?.nvImageUrl ?? imageUrl;
+  return [
+    { name, slug: `${slug}-veg`, category, description, price: vegPrice, imageUrl, isVeg: true, isFeatured: options?.isFeatured },
+    {
+      name: chickenName(category, name),
+      slug: `${slug}-nv`,
+      category,
+      description: chickenDescription(category, description),
+      price: nvPrice,
+      imageUrl: nvImageUrl,
+      isVeg: false,
+      isFeatured: options?.isFeatured,
+    },
+  ];
+}
 
-  { name: "Veg Manchurian Dry", slug: "veg-manchurian-dry", category: "manchurian", description: "Crispy veg balls, garlic chilli glaze.", price: 199, imageUrl: pexels(2474661), isVeg: true, isFeatured: true },
-  { name: "Veg Manchurian Gravy", slug: "veg-manchurian-gravy", category: "manchurian", description: "Silky brown sauce, perfect with fried rice.", price: 209, imageUrl: pexels(1099680), isVeg: true },
-  { name: "Chicken Manchurian", slug: "chicken-manchurian", category: "manchurian", description: "Boneless chicken, hot garlic, sesame.", price: 229, imageUrl: pexels(2338407), isVeg: false },
-  { name: "Gobi Manchurian", slug: "gobi-manchurian", category: "manchurian", description: "Cauliflower florets, extra crisp.", price: 189, imageUrl: pexels(1437267), isVeg: true },
+function burger(
+  name: string,
+  slug: string,
+  description: string,
+  vegPrice: number,
+  options?: { nvPrice?: number; isFeatured?: boolean }
+) {
+  return pair("burger", name, slug, description, vegPrice, dishImage(`${slug}-veg`), {
+    ...options,
+    nvImageUrl: dishImage(`${slug}-nv`),
+  });
+}
 
-  { name: "Arrabbiata", slug: "arrabbiata-pasta", category: "pasta", description: "Spicy tomato, chilli flakes and parmesan.", price: 219, imageUrl: pexels(1279330), isVeg: true },
-  { name: "Alfredo", slug: "alfredo-pasta", category: "pasta", description: "Creamy garlic alfredo with herbs.", price: 239, imageUrl: pexels(1437267), isVeg: true, isFeatured: true },
-  { name: "Pink Sauce Pasta", slug: "pink-sauce-pasta", category: "pasta", description: "Tomato-cream sauce, basil and mozzarella.", price: 229, imageUrl: pexels(1487511), isVeg: true },
+export const MENU_ITEMS: MenuRow[] = [
+  ...burger("Classic Burger", "classic-burger", "Toasted bun, house sauce, lettuce and a crisp patty.", 169, { isFeatured: true }),
+  ...burger("Cheese Burst Burger", "cheese-burst-burger", "Molten cheese core, soft potato bun, Wokora sauce.", 199, { isFeatured: true }),
+  ...burger("Peri Peri Burger", "peri-peri-burger", "Fiery peri peri glaze, cheddar and pickled onion.", 209),
+  ...burger("Double Patty Burger", "double-patty-burger", "Two smash patties, cheddar, pickles and secret sauce.", 259, { isFeatured: true }),
+  ...burger("Smash Burger", "smash-burger", "Thin griddle smash, caramelised edges, American cheese.", 219),
+  ...burger("BBQ Burger", "bbq-burger", "Smoky barbecue glaze, onion crunch and cheddar.", 229),
+  ...burger("Mexican Burger", "mexican-burger", "Jalapeño, salsa, nacho crunch and chipotle mayo.", 229),
+  ...burger("Tandoori Burger", "tandoori-burger", "Tandoori masala patty, mint mayo and onion.", 219),
+  ...burger("Loaded Burger", "loaded-burger", "Extra cheese, slaw, jalapeño and Wokora chilli dust.", 249),
+  ...burger("Crunch Burger", "crunch-burger", "Crispy coating, slaw and honey-chilli drizzle.", 199),
+  ...burger("Spicy Inferno Burger", "inferno-burger", "Ghost chilli mayo, pepper jack and pickle heat.", 239),
+  ...burger("Mushroom Melt Burger", "mushroom-melt-burger", "Garlic mushrooms, swiss melt and herb butter bun.", 229),
 
-  { name: "Club Sandwich", slug: "club-sandwich", category: "sandwich", description: "Triple-decker with chicken, egg, lettuce.", price: 179, imageUrl: pexels(1603901), isVeg: false },
-  { name: "Grilled Cheese", slug: "grilled-cheese", category: "sandwich", description: "Triple cheese pull on sourdough.", price: 149, imageUrl: pexels(1647163), isVeg: true },
-  { name: "Chicken Tikka Sandwich", slug: "chicken-tikka-sandwich", category: "sandwich", description: "Tandoori chicken, mint mayo and onions.", price: 199, imageUrl: pexels(1633525), isVeg: false },
+  ...vegOnly("coffee", "Espresso", "espresso", "Double shot, dense crema, served short.", 99, dishImage("espresso")),
+  ...vegOnly("coffee", "Americano", "americano", "Espresso stretched with hot water.", 109, dishImage("americano")),
+  ...vegOnly("coffee", "Cappuccino", "cappuccino", "Equal espresso, steamed milk and foam.", 129, dishImage("cappuccino"), { isFeatured: true }),
+  ...vegOnly("coffee", "Cafe Latte", "cafe-latte", "Silky steamed milk over a double shot.", 139, dishImage("cafe-latte")),
+  ...vegOnly("coffee", "Cafe Mocha", "cafe-mocha", "Espresso, dark cocoa and steamed milk.", 149, dishImage("cafe-mocha")),
+  ...vegOnly("coffee", "Cold Coffee", "cold-coffee", "Blended espresso, milk and ice, cream top.", 149, dishImage("cold-coffee"), { isFeatured: true }),
+  ...vegOnly("coffee", "Filter Coffee", "filter-coffee", "South-Indian decoction, milk, served hot.", 89, dishImage("filter-coffee")),
 
-  { name: "Chicken Caesar Wrap", slug: "chicken-caesar-wrap", category: "wraps", description: "Grilled chicken, parmesan and caesar dressing.", price: 189, imageUrl: pexels(461198), isVeg: false },
-  { name: "Falafel Wrap", slug: "falafel-wrap", category: "wraps", description: "Crispy falafel, hummus and pickled slaw.", price: 169, imageUrl: pexels(461198), isVeg: true },
-  { name: "Spicy Paneer Wrap", slug: "spicy-paneer-wrap", category: "wraps", description: "Peri paneer, peppers and garlic yoghurt.", price: 179, imageUrl: pexels(1059905), isVeg: true },
+  ...pair("momos", "Steamed Momos", "steamed-momos", "8 pieces, ginger-garlic filling, fiery red chutney.", 129, dishImage("steamed-momos"), { isFeatured: true }),
+  ...pair("momos", "Fried Momos", "fried-momos", "Golden fried pleats, sesame dip.", 149, dishImage("fried-momos")),
+  ...pair("momos", "Kurkure Momos", "kurkure-momos", "Crispy crumb coat, cheese pull, chilli oil.", 169, dishImage("kurkure-momos"), { isFeatured: true }),
+  ...pair("momos", "Tandoori Momos", "tandoori-momos", "Charred, smoky, tossed in tandoori masala.", 179, dishImage("tandoori-momos")),
+  ...pair("momos", "Chilli Momos", "chilli-momos", "Tossed in hot garlic, peppers and spring onion.", 189, dishImage("chilli-momos")),
+  ...pair("momos", "Pan Fried Momos", "pan-fried-momos", "Crisp base, steamed top, soy-chilli dip.", 169, dishImage("pan-fried-momos")),
+  ...pair("momos", "Afghani Momos", "afghani-momos", "Creamy malai marinade, mild heat, charcoal finish.", 199, dishImage("afghani-momos")),
+  ...pair("momos", "Butter Momos", "butter-momos", "Butter-garlic toss, toasted sesame.", 189, dishImage("butter-momos")),
 
-  { name: "Virgin Mojito", slug: "virgin-mojito", category: "mocktails", description: "Mint, lime, soda and crushed ice.", price: 129, imageUrl: pexels(1187766), isVeg: true, isFeatured: true },
-  { name: "Blue Lagoon", slug: "blue-lagoon", category: "mocktails", description: "Blue curaçao syrup, lemon and lemonade.", price: 139, imageUrl: pexels(1283219), isVeg: true },
-  { name: "Watermelon Cooler", slug: "watermelon-cooler", category: "mocktails", description: "Fresh watermelon, mint and lime zest.", price: 119, imageUrl: pexels(1337825), isVeg: true },
+  ...pair("spring-rolls", "Classic Spring Rolls", "classic-spring-rolls", "Golden fried rolls, cabbage slaw, sweet chilli dip.", 139, dishImage("classic-spring-rolls"), { isFeatured: true }),
+  ...pair("spring-rolls", "Cheese Spring Rolls", "cheese-spring-rolls", "Crispy wrapper, molten cheese, honey chilli dust.", 149, dishImage("cheese-spring-rolls")),
+  ...pair("spring-rolls", "Schezwan Spring Rolls", "schezwan-spring-rolls", "Hot garlic toss, peppers, toasted sesame.", 159, dishImage("schezwan-spring-rolls")),
+  ...pair("spring-rolls", "Crispy Spring Rolls", "crispy-spring-rolls", "Extra crunch, served with chilli garlic sauce.", 149, dishImage("crispy-spring-rolls")),
 
-  { name: "Cold Coffee", slug: "cold-coffee", category: "beverages", description: "Blended espresso, milk and ice cream top.", price: 129, imageUrl: pexels(312418), isVeg: true },
-  { name: "Masala Lemonade", slug: "masala-lemonade", category: "beverages", description: "Spiced nimbu pani with black salt.", price: 89, imageUrl: pexels(96974), isVeg: true },
-  { name: "Soft Drink", slug: "soft-drink", category: "beverages", description: "Chilled canned soda of your choice.", price: 59, imageUrl: pexels(50593), isVeg: true },
-] as const;
+  ...pair("noodles", "Hakka Noodles", "hakka-noodles", "Street-style wok toss, crunchy vegetables, soy butter.", 169, dishImage("hakka-noodles"), { isFeatured: true }),
+  ...pair("noodles", "Schezwan Noodles", "schezwan-noodles", "Fiery schezwan oil, toasted garlic, chilli crunch.", 189, dishImage("schezwan-noodles")),
+  ...pair("noodles", "Chilli Garlic Noodles", "chilli-garlic-noodles", "Lots of garlic, dry red chilli, spring onion.", 189, dishImage("chilli-garlic-noodles")),
+  ...pair("noodles", "Singapore Noodles", "singapore-noodles", "Curry-scented wok noodles, peppers and egg-style toss.", 199, dishImage("singapore-noodles")),
+  ...pair("noodles", "Pan Fried Noodles", "pan-fried-noodles", "Crisp nest, brown gravy, wok vegetables.", 209, dishImage("pan-fried-noodles")),
+  ...pair("noodles", "Garlic Butter Noodles", "garlic-butter-noodles", "Butter, garlic, white pepper and herbs.", 179, dishImage("garlic-butter-noodles")),
+
+  ...pair("chilli-potato", "Honey Chilli Potato", "honey-chilli-potato", "Crispy fingers, honey, sesame, spring onion.", 179, dishImage("honey-chilli-potato"), { isFeatured: true }),
+  ...pair("chilli-potato", "Dry Chilli Potato", "dry-chilli-potato", "Indo-Chinese classic, extra crunch, no gravy.", 169, dishImage("dry-chilli-potato")),
+  ...pair("chilli-potato", "Schezwan Chilli Potato", "schezwan-chilli-potato", "Schezwan paste, garlic, toasted sesame.", 189, dishImage("schezwan-chilli-potato")),
+  ...pair("chilli-potato", "Garlic Chilli Potato", "garlic-chilli-potato", "Burnt garlic, dry chilli and salt-pepper.", 179, dishImage("garlic-chilli-potato")),
+
+  ...pair("fried-rice", "Classic Fried Rice", "classic-fried-rice", "Wok-charred rice, light soy, spring onion.", 159, dishImage("classic-fried-rice"), { isFeatured: true }),
+  ...pair("fried-rice", "Schezwan Fried Rice", "schezwan-fried-rice", "Red chilli paste, crunch, smoke.", 179, dishImage("schezwan-fried-rice")),
+  ...pair("fried-rice", "Burnt Garlic Fried Rice", "burnt-garlic-fried-rice", "Toasted garlic oil, white pepper, greens.", 169, dishImage("burnt-garlic-fried-rice")),
+  ...pair("fried-rice", "Chilli Fried Rice", "chilli-fried-rice", "Hot garlic, dry chilli, wok vegetables.", 179, dishImage("chilli-fried-rice")),
+  ...pair("fried-rice", "Hong Kong Fried Rice", "hong-kong-fried-rice", "Sweet-savoury wok rice, peppers and sesame.", 189, dishImage("hong-kong-fried-rice")),
+
+  ...pair("wraps", "Classic Wrap", "classic-wrap", "Warm tortilla, slaw, house sauce, toasted close.", 169, dishImage("classic-wrap"), { isFeatured: true }),
+  ...pair("wraps", "Peri Peri Wrap", "peri-peri-wrap", "Peri glaze, peppers, cheddar and mint mayo.", 189, dishImage("peri-peri-wrap")),
+  ...pair("wraps", "Cheese Melt Wrap", "cheese-melt-wrap", "Triple cheese pull, jalapeño, garlic yoghurt.", 179, dishImage("cheese-melt-wrap")),
+  ...pair("wraps", "Schezwan Wrap", "schezwan-wrap", "Schezwan heat, onion crunch and sesame.", 189, dishImage("schezwan-wrap")),
+  ...pair("wraps", "Loaded Wrap", "loaded-wrap", "Extra filling, cheese, slaw and chilli dust.", 209, dishImage("loaded-wrap")),
+
+  ...nvOnly("chicken-lollipop", "Classic Lollipop", "classic-lollipop", "Frenched drumettes, crisp coat, chilli garlic dip.", 229, dishImage("classic-lollipop"), { isFeatured: true }),
+  ...nvOnly("chicken-lollipop", "Schezwan Lollipop", "schezwan-lollipop", "Tossed in schezwan, sesame and spring onion.", 249, dishImage("schezwan-lollipop")),
+  ...nvOnly("chicken-lollipop", "Dry Lollipop", "dry-lollipop", "Salt-pepper crust, no gravy, extra crunch.", 239, dishImage("dry-lollipop")),
+  ...nvOnly("chicken-lollipop", "Gravy Lollipop", "gravy-lollipop", "Hot garlic gravy, peppers, served saucy.", 259, dishImage("gravy-lollipop")),
+  ...nvOnly("chicken-lollipop", "Crispy Lollipop", "crispy-lollipop", "Double fry, honey chilli drizzle.", 249, dishImage("crispy-lollipop")),
+];

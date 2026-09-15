@@ -1,8 +1,10 @@
 import { prisma } from "./prisma";
 import { BRAND, displayOrderNumber } from "./constants";
+import { DEFAULT_STORE_ID } from "./store";
 
 type NotifyInput = {
   userId: string;
+  storeId?: string;
   title: string;
   body: string;
   orderId?: string;
@@ -13,6 +15,7 @@ export async function notifyUser(input: NotifyInput) {
   const notification = await prisma.notification.create({
     data: {
       userId: input.userId,
+      storeId: input.storeId || DEFAULT_STORE_ID,
       title: input.title,
       body: input.body,
       orderId: input.orderId,
@@ -30,6 +33,7 @@ export async function notifyOrderPlaced(order: {
   id: string;
   serialNumber: number;
   userId: string;
+  storeId?: string;
   tableNumber: string | null;
   totalAmount: number;
   user: { email?: string | null; phone: string };
@@ -41,6 +45,7 @@ export async function notifyOrderPlaced(order: {
   }. Total ₹${Math.round(order.totalAmount)}. We will notify you as soon as the kitchen sets a wait time.`;
   return notifyUser({
     userId: order.userId,
+    storeId: order.storeId,
     title,
     body,
     orderId: order.id,

@@ -4,8 +4,15 @@ import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
 import { orderSchema } from "@/lib/validations";
 import { GST_RATE, loyaltyFromTotal } from "@/lib/constants";
-import { printReceipt } from "@/lib/printReceipt";
-import { notifyOrderPlaced } from "@/lib/notify";
+import { DEFAULT_STORE_ID, ensureDefaultStore } from "@/lib/store";
+import { afterOrderPlaced, type OrderPlacedEvent } from "@/lib/orderEvents";
+import { attachItemCustomizations, saveOrderItemCustomizations } from "@/lib/cartPersistence";
+import {
+  optionGroupsFor,
+  sanitizeSelections,
+  summaryFromSelections,
+  unitPriceFromSelections,
+} from "@/lib/customizations";
 
 export async function GET() {
   const session = await getServerSession(authOptions);
@@ -13,9 +20,10 @@ export async function GET() {
     return NextResponse.json({ error: "Login required" }, { status: 401 });
   }
 
+  const storeId = session.user.storeId || DEFAULT_STORE_ID;
   const isAdmin = session.user.role === "admin";
   const orders = await prisma.order.findMany({
-    where: isAdmin ? {} : { userId: session.user.id },
+    where: isAdmin ? { storeId } : { storeId, userId: session.user.id },
     include: {
       items: { include: { menuItem: true } },
       user: { select: { name: true, phone: true, email: true } },
@@ -23,13 +31,16 @@ export async function GET() {
     orderBy: isAdmin ? { serialNumber: "asc" } : { createdAt: "desc" },
   });
 
-  return NextResponse.json({ orders });
+  return NextResponse.json({ orders: await attachItemCustomizations(orders) });
 }
 
 export async function POST(request: Request) {
   const session = await getServerSession(authOptions);
   if (!session?.user.id) {
     return NextResponse.json({ error: "Login required to place an order" }, { status: 401 });
+  }
+  if (session.user.role === "admin") {
+    return NextResponse.json({ error: "Kitchen accounts cannot place customer orders" }, { status: 403 });
   }
 
   const parsed = orderSchema.safeParse(await request.json());
@@ -38,25 +49,35 @@ export async function POST(request: Request) {
   }
 
   const { items, type, tableNumber, notes, paymentMethod } = parsed.data;
+  const storeId = session.user.storeId || DEFAULT_STORE_ID;
+  await ensureDefaultStore();
 
   if (type === "dine_in" && !tableNumber) {
     return NextResponse.json({ error: "Table number is required for dine-in" }, { status: 400 });
   }
 
+  const menuIds = Array.from(new Set(items.map((item) => item.menuItemId)));
   const menuItems = await prisma.menuItem.findMany({
-    where: { id: { in: items.map((item) => item.menuItemId) }, isAvailable: true },
+    where: { id: { in: menuIds }, isAvailable: true, storeId },
+    include: { category: true },
   });
 
-  if (menuItems.length !== items.length) {
+  if (menuItems.length !== menuIds.length) {
     return NextResponse.json({ error: "One or more items are unavailable" }, { status: 400 });
   }
 
   const priced = items.map((item) => {
     const menuItem = menuItems.find((row) => row.id === item.menuItemId)!;
+    const groups = optionGroupsFor(menuItem.category.slug, menuItem.isVeg);
+    const selections = sanitizeSelections(groups, item.selections);
+    const unitPrice = unitPriceFromSelections(menuItem.price, groups, selections);
+    const customization = item.customization || summaryFromSelections(groups, selections);
     return {
       menuItem,
       quantity: item.quantity,
-      lineTotal: menuItem.price * item.quantity,
+      unitPrice,
+      customization,
+      lineTotal: unitPrice * item.quantity,
     };
   });
 
@@ -65,6 +86,7 @@ export async function POST(request: Request) {
   const totalAmount = subtotal + taxAmount;
 
   const last = await prisma.order.findFirst({
+    where: { storeId },
     orderBy: { serialNumber: "desc" },
     select: { serialNumber: true },
   });
@@ -72,6 +94,7 @@ export async function POST(request: Request) {
 
   const order = await prisma.order.create({
     data: {
+      storeId,
       serialNumber,
       userId: session.user.id,
       tableNumber: type === "dine_in" ? tableNumber : null,
@@ -82,12 +105,12 @@ export async function POST(request: Request) {
       subtotal,
       taxAmount,
       totalAmount,
-      notes,
+      notes: notes || null,
       items: {
         create: priced.map((row) => ({
           menuItemId: row.menuItem.id,
           quantity: row.quantity,
-          priceAtOrder: row.menuItem.price,
+          priceAtOrder: row.unitPrice,
         })),
       },
     },
@@ -97,29 +120,42 @@ export async function POST(request: Request) {
     },
   });
 
+  await saveOrderItemCustomizations(
+    order.items,
+    priced.map((row) => row.customization || "")
+  );
+  const itemsWithNotes = (await attachItemCustomizations([order]))[0];
+
   await prisma.user.update({
     where: { id: session.user.id },
     data: { loyaltyPoints: { increment: loyaltyFromTotal(totalAmount) } },
   });
 
-  await printReceipt({
-    id: order.id,
+  const event: OrderPlacedEvent = {
+    type: "OrderPlaced",
+    storeId,
+    orderId: order.id,
+    userId: order.userId,
+    serialNumber: order.serialNumber,
     tableNumber: order.tableNumber,
-    type: order.type as "dine_in" | "takeaway",
-    items: order.items.map((item) => ({
-      name: item.menuItem.name,
-      quantity: item.quantity,
-      price: item.priceAtOrder,
-    })),
+    orderType: order.type,
+    status: order.status,
+    paymentStatus: order.paymentStatus,
     subtotal: order.subtotal,
     taxAmount: order.taxAmount,
     totalAmount: order.totalAmount,
-    createdAt: order.createdAt,
-    customerName: order.user.name,
-    customerPhone: order.user.phone,
-  });
+    createdAt: order.createdAt.toISOString(),
+    customer: { name: order.user.name, phone: order.user.phone, email: order.user.email },
+    items: itemsWithNotes.items.map((item, index) => ({
+      name: item.menuItem.name,
+      customization: item.customization || priced[index]?.customization || "",
+      quantity: item.quantity,
+      price: item.priceAtOrder,
+      isVeg: item.menuItem.isVeg,
+    })),
+  };
 
-  await notifyOrderPlaced(order);
+  await afterOrderPlaced(event);
 
-  return NextResponse.json({ order });
+  return NextResponse.json({ order: itemsWithNotes });
 }

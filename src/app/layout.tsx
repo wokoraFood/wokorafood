@@ -1,9 +1,11 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Bebas_Neue, Inter, Poppins } from "next/font/google";
 import { AppProviders } from "@/components/providers/AppProviders";
 import { Navbar } from "@/components/layout/Navbar";
 import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
+import { StickyCartBar } from "@/components/order/StickyCartBar";
 import { Footer } from "@/components/layout/Footer";
+import { ToastHost } from "@/components/ui/Toast";
 import { BRAND } from "@/lib/constants";
 import "./globals.css";
 
@@ -21,7 +23,13 @@ const bebas = Bebas_Neue({
 
 export const metadata: Metadata = {
   title: `${BRAND.name} | ${BRAND.tagline}`,
-  description: `${BRAND.subTagline}. Momos, noodles, burgers, and cafe classics in a neon booth setting.`,
+  description: `${BRAND.subTagline}. ${BRAND.name} at ${BRAND.location} — momos, noodles, burgers, and cafe classics.`,
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 const themeBootScript = `
@@ -45,12 +53,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />
       </head>
-      <body className="min-h-screen bg-ink font-body text-brand-cream antialiased">
+          <body className="min-h-screen overflow-x-clip bg-ink font-body text-brand-cream antialiased">
         <AppProviders>
           <Navbar />
-          <main>{children}</main>
+          <main className="min-w-0">{children}</main>
           <Footer />
+          <StickyCartBar />
           <MobileBottomNav />
+          <ToastHost />
         </AppProviders>
       </body>
     </html>

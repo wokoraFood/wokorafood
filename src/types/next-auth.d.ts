@@ -6,12 +6,14 @@ declare module "next-auth" {
       id: string;
       phone: string;
       role: "customer" | "admin";
+      storeId: string;
     } & DefaultSession["user"];
   }
 
   interface User {
     phone?: string | null;
     role?: "customer" | "admin";
+    storeId?: string;
   }
 }
 
@@ -20,5 +22,6 @@ declare module "next-auth/jwt" {
     id: string;
     phone: string;
     role: "customer" | "admin";
+    storeId: string;
   }
 }

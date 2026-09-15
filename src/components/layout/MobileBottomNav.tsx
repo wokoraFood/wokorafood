@@ -10,7 +10,7 @@ const CUSTOMER_TABS = [
   { href: "/", label: "Home", icon: Home },
   { href: "/menu", label: "Menu", icon: UtensilsCrossed },
   { href: "/cart", label: "Cart", icon: ShoppingBag },
-  { href: "/account", label: "Account", icon: UserRound },
+  { href: "/account", label: "Order", icon: UserRound },
 ];
 
 const ADMIN_TABS = [
@@ -38,10 +38,10 @@ export function MobileBottomNav() {
 
   return (
     <>
-      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-ink/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl md:hidden">
+      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-ink/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl lg:hidden">
         <div className="grid grid-cols-4">
           {tabs.map((tab) => {
-            const active = isActive(pathname, tab.href, "exact" in tab ? tab.exact : false);
+            const active = isActive(pathname, tab.href, (tab as { exact?: boolean }).exact);
             return (
               <Link
                 key={tab.href}
@@ -62,7 +62,7 @@ export function MobileBottomNav() {
           })}
         </div>
       </nav>
-      <div className="h-[4.25rem] md:hidden" aria-hidden />
+      <div className="h-[4.25rem] lg:hidden" aria-hidden />
     </>
   );
 }

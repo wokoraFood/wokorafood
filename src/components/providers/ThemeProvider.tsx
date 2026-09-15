@@ -4,7 +4,6 @@ import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import {
   applyTheme,
   readStoredTheme,
-  resolveTheme,
   type ResolvedTheme,
   type ThemePreference,
 } from "@/lib/theme";

@@ -51,9 +51,9 @@ export function Navbar() {
   return (
     <>
     <header className="sticky top-0 z-50 border-b border-white/10 bg-ink/80 backdrop-blur-xl">
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
+      <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-2 px-3 sm:h-16 sm:px-6">
         <Logo />
-        <nav className="hidden items-center gap-8 md:flex">
+        <nav className="hidden items-center gap-6 lg:flex xl:gap-8">
           {LINKS.map((link) => (
             <Link
               key={link.href}
@@ -67,8 +67,8 @@ export function Navbar() {
           ))}
           {session?.user.role === "customer" && (
             <>
-              <Link href="/account" className={`text-sm ${pathname.startsWith("/account") ? "text-brand-red" : "text-brand-cream/75"}`}>
-                Dashboard
+              <Link href="/account" className={`text-sm ${pathname === "/account" ? "text-brand-red" : "text-brand-cream/75"}`}>
+                Order
               </Link>
               <Link href="/account/support" className="text-sm text-brand-cream/75 hover:text-brand-red">
                 Support
@@ -76,16 +76,17 @@ export function Navbar() {
             </>
           )}
         </nav>
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-0.5 sm:gap-2">
           <button
             type="button"
             onClick={toggleFestive}
-            className={`hidden rounded-full p-2 sm:grid ${festive ? "text-brand-gold" : "text-brand-cream/70"}`}
+            className={`hidden rounded-full p-2 md:grid ${festive ? "text-brand-gold" : "text-brand-cream/70"}`}
             aria-label="Toggle festive theme"
           >
             <Sparkles className="h-5 w-5" />
           </button>
           <NotificationBell />
+          {session?.user.role !== "admin" && (
           <Link href="/cart" className="relative rounded-full p-2 text-brand-cream hover:text-brand-red">
             <ShoppingBag className="h-5 w-5" />
             {count > 0 && (
@@ -94,8 +95,9 @@ export function Navbar() {
               </span>
             )}
           </Link>
+          )}
           {session ? (
-            <div className="hidden items-center gap-2 sm:flex">
+            <div className="hidden items-center gap-2 lg:flex">
               <Link
                 href={session.user.role === "admin" ? "/admin" : "/account"}
                 className="flex items-center gap-2 rounded-full border border-white/10 px-3 py-1.5 text-sm text-brand-cream hover:border-brand-red/50"
@@ -108,7 +110,7 @@ export function Navbar() {
           ) : (
             <Link
               href="/login"
-              className="hidden items-center gap-2 rounded-full border border-white/10 px-3 py-1.5 text-sm text-brand-cream hover:border-brand-red/50 sm:flex"
+              className="hidden items-center gap-2 rounded-full border border-white/10 px-3 py-1.5 text-sm text-brand-cream hover:border-brand-red/50 lg:flex"
             >
               <UserRound className="h-4 w-4" />
               Login
@@ -116,7 +118,7 @@ export function Navbar() {
           )}
           <button
             type="button"
-            className="rounded-full p-2 text-brand-cream md:hidden"
+            className="rounded-full p-2 text-brand-cream lg:hidden"
             onClick={() => setOpen((value) => !value)}
             aria-label={open ? "Close menu" : "Open menu"}
           >
@@ -127,7 +129,7 @@ export function Navbar() {
     </header>
 
       <div
-        className={`fixed inset-0 z-[80] md:hidden ${open ? "pointer-events-auto" : "pointer-events-none"}`}
+        className={`fixed inset-0 z-[80] lg:hidden ${open ? "pointer-events-auto" : "pointer-events-none"}`}
       >
         <button
           type="button"
@@ -163,7 +165,7 @@ export function Navbar() {
             {session?.user.role === "customer" && (
               <>
                 <Link href="/account" onClick={() => setOpen(false)} className="rounded-full px-4 py-3 text-white/90">
-                  Dashboard
+                  Order
                 </Link>
                 <Link href="/account/settings" onClick={() => setOpen(false)} className="rounded-full px-4 py-3 text-white/90">
                   Settings

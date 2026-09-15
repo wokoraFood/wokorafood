@@ -2,48 +2,60 @@
 
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { WALL_ART } from "@/lib/constants";
-
-const PHOTOS = [
-  "https://images.pexels.com/photos/262978/pexels-photo-262978.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  "https://images.pexels.com/photos/941861/pexels-photo-941861.jpeg?auto=compress&cs=tinysrgb&w=900",
-  "https://images.pexels.com/photos/1307698/pexels-photo-1307698.jpeg?auto=compress&cs=tinysrgb&w=900",
-];
+import { BRAND } from "@/lib/constants";
+import { MENU_CATEGORIES } from "@/data/menu";
 
 export function AboutSection() {
+  const photos = [MENU_CATEGORIES[0], MENU_CATEGORIES[2], MENU_CATEGORIES[4]];
+
   return (
     <section id="about" className="mx-auto max-w-7xl px-4 py-20 sm:px-6">
       <div className="grid items-center gap-10 lg:grid-cols-2">
         <div className="grid grid-cols-2 gap-3">
           <Image
-            src={PHOTOS[0]}
-            alt="Wokora booth seating"
+            src={photos[0].image}
+            alt={photos[0].name}
             width={480}
             height={640}
-            className="h-72 w-full rounded-2xl object-cover md:h-[28rem]"
+            unoptimized
+            className="h-52 w-full rounded-2xl object-cover sm:h-72 md:h-[28rem]"
           />
           <div className="grid gap-3">
-            <Image src={PHOTOS[1]} alt="Cafe dining room" width={360} height={260} className="h-36 w-full rounded-2xl object-cover md:h-52" />
-            <Image src={PHOTOS[2]} alt="Shared plates on the table" width={360} height={260} className="h-36 w-full rounded-2xl object-cover md:h-52" />
+            <Image
+              src={photos[1].image}
+              alt={photos[1].name}
+              width={360}
+              height={260}
+              unoptimized
+              className="h-28 w-full rounded-2xl object-cover sm:h-36 md:h-52"
+            />
+            <Image
+              src={photos[2].image}
+              alt={photos[2].name}
+              width={360}
+              height={260}
+              unoptimized
+              className="h-28 w-full rounded-2xl object-cover sm:h-36 md:h-52"
+            />
           </div>
         </div>
         <div>
           <h2 className="heading-underline font-display text-3xl font-bold">A cafe that tastes like a night out</h2>
           <p className="mt-6 text-brand-cream/75">
-            Wokora Foods is a fast-food cafe built for lingering — red booths, warm timber,
-            neon wall art and a kitchen that moves from smash burgers to hakka noodles without
-            losing the plot. Order from your phone at the table. We print the ticket at the counter.
+            Wokora Foods is a sit-down cafe at {BRAND.location} — nine food types only: burgers,
+            coffee, momos, spring rolls, noodles, chilli potato, fried rice, wraps and chicken
+            lollipop. Order from your phone at the table. We bring the food to you.
           </p>
-          <div className="mt-8 grid gap-4 sm:grid-cols-2">
-            {WALL_ART.slice(0, 4).map((phrase, index) => (
+          <div className="mt-8 grid grid-cols-2 gap-2 sm:grid-cols-3">
+            {MENU_CATEGORIES.map((category) => (
               <motion.p
-                key={phrase}
-                initial={{ opacity: 0, rotate: -2 }}
-                whileInView={{ opacity: 1, rotate: index % 2 ? 2 : -2 }}
+                key={category.slug}
+                initial={{ opacity: 0, y: 8 }}
+                whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                className="wall-art rounded-xl border border-brand-red/30 bg-brand-red/10 px-4 py-5 text-2xl"
+                className="rounded-xl border border-white/10 bg-white/5 px-2 py-2 text-center font-display text-[11px] font-semibold sm:px-3 sm:py-3 sm:text-sm"
               >
-                {phrase}
+                {category.name}
               </motion.p>
             ))}
           </div>

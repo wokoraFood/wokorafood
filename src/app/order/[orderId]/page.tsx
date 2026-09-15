@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { Check } from "lucide-react";
-import { displayOrderNumber, formatINR } from "@/lib/constants";
+import { brandWhatsApp, displayOrderNumber, formatINR } from "@/lib/constants";
 
 const STEPS = ["placed", "preparing", "ready", "served"] as const;
 
@@ -21,7 +21,7 @@ type Order = {
   taxAmount: number;
   totalAmount: number;
   createdAt: string;
-  items: { quantity: number; priceAtOrder: number; menuItem: { name: string } }[];
+  items: { id?: string; quantity: number; priceAtOrder: number; customization?: string; menuItem: { name: string } }[];
 };
 
 export default function OrderPage() {
@@ -46,7 +46,7 @@ export default function OrderPage() {
 
   const stepIndex = Math.max(0, STEPS.indexOf(order.status as (typeof STEPS)[number]));
   const number = displayOrderNumber(order.serialNumber);
-  const wa = `https://wa.me/919876543210?text=${encodeURIComponent(
+  const wa = `https://wa.me/${brandWhatsApp()}?text=${encodeURIComponent(
     `Hi Wokora Foods, I need help with order ${number}. Current status: ${order.status}.`
   )}`;
 
@@ -75,7 +75,7 @@ export default function OrderPage() {
         {STEPS.map((step, index) => (
           <div key={step} className="flex flex-1 flex-col items-center">
             <div className={`h-3 w-3 rounded-full ${index <= stepIndex ? "bg-brand-red shadow-neon" : "bg-white/20"}`} />
-            <p className="mt-2 text-[11px] uppercase tracking-wide text-brand-cream/60">{step}</p>
+            <p className="mt-2 text-[10px] uppercase tracking-wide text-brand-cream/60 sm:text-[11px]">{step}</p>
           </div>
         ))}
       </div>
@@ -85,10 +85,13 @@ export default function OrderPage() {
         <p>Type: {order.type === "dine_in" ? `Dine-in · Table ${order.tableNumber}` : "Takeaway"}</p>
         <p className="text-brand-cream/60">{new Date(order.createdAt).toLocaleString("en-IN")}</p>
         <ul className="mt-4 space-y-2 border-y border-dashed border-white/15 py-4">
-          {order.items.map((item) => (
-            <li key={item.menuItem.name} className="flex justify-between">
+          {order.items.map((item, index) => (
+            <li key={item.id || `${item.menuItem.name}-${index}`} className="flex justify-between gap-3">
               <span>
                 {item.menuItem.name} × {item.quantity}
+                {item.customization ? (
+                  <span className="mt-0.5 block text-xs text-brand-cream/50">{item.customization}</span>
+                ) : null}
               </span>
               <span>{formatINR(item.priceAtOrder * item.quantity)}</span>
             </li>

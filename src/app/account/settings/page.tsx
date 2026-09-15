@@ -2,16 +2,22 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import { ThemePicker } from "@/components/theme/ThemePicker";
+import { DietToggle, type DietPreference } from "@/components/menu/DietToggle";
 
 export default function SettingsPage() {
   const [form, setForm] = useState({ name: "", email: "", password: "" });
+  const [diet, setDiet] = useState<DietPreference>("all");
   const [message, setMessage] = useState("");
 
   useEffect(() => {
     fetch("/api/account")
       .then((res) => res.json())
       .then((data) => {
-        if (data.user) setForm({ name: data.user.name, email: data.user.email || "", password: "" });
+        if (data.user) {
+          setForm({ name: data.user.name, email: data.user.email || "", password: "" });
+          const saved = data.user.dietPreference as DietPreference;
+          if (saved === "veg" || saved === "nonveg" || saved === "all") setDiet(saved);
+        }
       });
   }, []);
 
@@ -30,6 +36,21 @@ export default function SettingsPage() {
       <h1 className="heading-underline font-display text-3xl font-bold">Settings</h1>
       <p className="mt-3 text-sm text-brand-cream/60">Update your name, email, and password here. Your phone number is your cafe ID.</p>
       <div className="card-surface mt-8 p-6">
+        <p className="font-display text-lg font-semibold">Food preference</p>
+        <p className="mt-1 mb-4 text-sm text-brand-cream/60">Saved only to this login.</p>
+        <DietToggle
+          value={diet}
+          onChange={(next) => {
+            setDiet(next);
+            fetch("/api/account", {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ dietPreference: next }),
+            }).catch(() => undefined);
+          }}
+        />
+      </div>
+      <div className="card-surface mt-6 p-6">
         <ThemePicker />
       </div>
       <form onSubmit={submit} className="card-surface mt-6 space-y-4 p-6">

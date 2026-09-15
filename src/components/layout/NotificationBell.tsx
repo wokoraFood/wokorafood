@@ -46,7 +46,7 @@ export function NotificationBell() {
     };
 
     load();
-    const timer = setInterval(load, 5000);
+    const timer = setInterval(load, 15000);
     return () => clearInterval(timer);
   }, [status]);
 

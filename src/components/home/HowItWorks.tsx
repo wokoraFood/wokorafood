@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { QrCode, Smartphone, Flame, Utensils } from "lucide-react";
 
 const STEPS = [
-  { title: "Scan the table", copy: "QR on the booth opens the menu with your table number.", icon: QrCode },
+  { title: "Scan the table", copy: "QR on the booth opens your order screen with the table number.", icon: QrCode },
   { title: "Tap the plate", copy: "Momos, noodles, burgers — add, pay, done.", icon: Smartphone },
   { title: "Kitchen prints", copy: "Ticket hits the counter. Staff set your wait time.", icon: Flame },
   { title: "Eat in the glow", copy: "Stay in the red booth. Notification when it's ready.", icon: Utensils },
@@ -12,7 +12,7 @@ const STEPS = [
 
 export function HowItWorks() {
   return (
-    <section className="bg-brand-glow py-16">
+    <section className="bg-brand-glow py-12 sm:py-16">
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
         <h2 className="heading-underline font-display text-3xl font-bold">How a Wokora night works</h2>
         <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">

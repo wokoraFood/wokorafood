@@ -3,6 +3,7 @@
 import { SessionProvider } from "next-auth/react";
 import { useEffect } from "react";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
+import { UserSpaceSync } from "@/components/providers/UserSpaceSync";
 
 export function AppProviders({ children }: { children: React.ReactNode }) {
   useEffect(() => {
@@ -12,7 +13,10 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
 
   return (
     <SessionProvider>
-      <ThemeProvider>{children}</ThemeProvider>
+      <ThemeProvider>
+        <UserSpaceSync />
+        {children}
+      </ThemeProvider>
     </SessionProvider>
   );
 }

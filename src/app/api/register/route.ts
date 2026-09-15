@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { registerSchema } from "@/lib/validations";
 import { verifyOtp } from "@/lib/otp";
 import { normalizePhone } from "@/lib/phone";
+import { DEFAULT_STORE_ID, ensureDefaultStore } from "@/lib/store";
 
 export async function POST(request: Request) {
   const body = await request.json();
@@ -23,8 +24,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid or expired OTP" }, { status: 400 });
   }
 
+  await ensureDefaultStore();
   const exists = await prisma.user.findFirst({
-    where: { OR: [{ phone }, ...(email ? [{ email: email.toLowerCase() }] : [])] },
+    where: { storeId: DEFAULT_STORE_ID, OR: [{ phone }, ...(email ? [{ email: email.toLowerCase() }] : [])] },
   });
 
   if (exists) {
@@ -38,6 +40,7 @@ export async function POST(request: Request) {
       email: email ? email.toLowerCase() : null,
       passwordHash: await bcrypt.hash(password, 10),
       phoneVerified: Boolean(otp),
+      storeId: DEFAULT_STORE_ID,
     },
     select: { id: true, name: true, phone: true, email: true },
   });

@@ -1,11 +1,11 @@
 import Link from "next/link";
 
 export function Logo({ size = "md" }: { size?: "sm" | "md" | "lg" }) {
-  const mark = size === "lg" ? "h-14 w-14" : size === "sm" ? "h-8 w-8" : "h-10 w-10";
-  const word = size === "lg" ? "text-3xl" : size === "sm" ? "text-lg" : "text-xl";
+  const mark = size === "lg" ? "h-14 w-14" : size === "sm" ? "h-8 w-8" : "h-8 w-8 sm:h-10 sm:w-10";
+  const word = size === "lg" ? "text-3xl" : size === "sm" ? "text-lg" : "text-lg sm:text-xl";
 
   return (
-    <Link href="/" className="flex items-center gap-2.5">
+    <Link href="/" className="flex min-w-0 items-center gap-1.5 sm:gap-2.5">
       <svg viewBox="0 0 64 64" className={`${mark} shrink-0`} aria-hidden>
         <ellipse cx="32" cy="44" rx="22" ry="8" fill="#E8272C" />
         <path
@@ -20,8 +20,8 @@ export function Logo({ size = "md" }: { size?: "sm" | "md" | "lg" }) {
         <path d="M14 16l18 16" stroke="#F5A623" strokeWidth="2.4" strokeLinecap="round" />
       </svg>
       <span className={`font-display font-extrabold tracking-tight ${word}`}>
-        <span className="text-brand-cream">Wokora</span>{" "}
-        <span className="text-brand-red">Foods</span>
+        <span className="text-brand-cream">Wokora</span>
+        <span className="text-brand-red"> Foods</span>
       </span>
     </Link>
   );

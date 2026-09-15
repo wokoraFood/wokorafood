@@ -1,10 +1,11 @@
 import { prisma } from "./prisma";
+import { DEFAULT_STORE_ID } from "./store";
 
 export type PrintableOrder = {
   id: string;
   tableNumber: string | null;
   type: "dine_in" | "takeaway";
-  items: { name: string; quantity: number; price: number }[];
+  items: { name: string; quantity: number; price: number; customization?: string }[];
   subtotal: number;
   taxAmount: number;
   totalAmount: number;
@@ -40,6 +41,7 @@ export async function printReceipt(order: PrintableOrder) {
       orderId: order.id,
       status: "pending",
       payload: JSON.stringify(order),
+      storeId: DEFAULT_STORE_ID,
     },
   });
 
@@ -116,10 +118,10 @@ async function notifyWhatsApp(order: PrintableOrder) {
 export function buildReceiptHtml(order: PrintableOrder) {
   const when = new Date(order.createdAt).toLocaleString("en-IN");
   const rows = order.items
-    .map(
-      (item) =>
-        `<tr><td>${item.name}</td><td>${item.quantity}</td><td>₹${item.price * item.quantity}</td></tr>`
-    )
+    .map((item) => {
+      const label = item.customization ? `${item.name}<br/><small>${item.customization}</small>` : item.name;
+      return `<tr><td>${label}</td><td>${item.quantity}</td><td>₹${item.price * item.quantity}</td></tr>`;
+    })
     .join("");
 
   return `<!DOCTYPE html>

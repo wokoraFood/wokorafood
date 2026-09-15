@@ -60,7 +60,7 @@ export default function SignupPage() {
           <p className="wall-art text-5xl">Good Food Good Vibes</p>
         </div>
       </div>
-      <div className="flex items-center justify-center px-6 py-12">
+      <div className="flex items-center justify-center px-4 py-10 sm:px-6 sm:py-12">
         <div className="w-full max-w-md">
           <Logo />
           <h1 className="mt-8 font-display text-3xl font-bold">Join Wokora Foods</h1>
@@ -82,14 +82,14 @@ export default function SignupPage() {
               placeholder="10-digit phone number"
               className="w-full rounded-full border border-white/10 bg-white/5 px-4 py-3 outline-none focus:border-brand-red"
             />
-            <div className="flex gap-2">
+            <div className="flex flex-col gap-2 sm:flex-row">
               <input
                 value={form.otp}
                 onChange={(event) => setForm({ ...form, otp: event.target.value })}
                 placeholder="OTP (optional)"
                 className="w-full rounded-full border border-white/10 bg-white/5 px-4 py-3 outline-none focus:border-brand-red"
               />
-              <button type="button" onClick={sendOtp} className="rounded-full border border-white/15 px-4 text-sm">
+              <button type="button" onClick={sendOtp} className="rounded-full border border-white/15 px-4 py-3 text-sm sm:py-0">
                 Send OTP
               </button>
             </div>

@@ -4,15 +4,14 @@ export const BRAND = {
   domain: "wokorafoods.com",
   tagline: "Good Food. Better Mood.",
   subTagline: "Taste Talks Here",
-  phone: "+91 98765 43210",
-  email: "hello@wokorafoods.com",
-  address: "12, Food Street, Koramangala 4th Block, Bengaluru 560034",
+  phone: "+91 81782 06648",
+  email: "wokorafoods@gmail.com",
+  address: "Shop No. 23, LGF, Siddharth Vihar, Opus Plot, Yojna, Ghaziabad, UP 201009",
+  location: "Siddharth Vihar, Ghaziabad",
   hours: [
     { day: "Monday – Thursday", time: "11:00 AM – 11:00 PM" },
     { day: "Friday – Sunday", time: "11:00 AM – 12:00 AM" },
   ],
-  mapEmbed:
-    "https://maps.google.com/maps?q=koramangala%20bangalore%20food%20street&t=&z=15&ie=UTF8&iwloc=&output=embed",
   social: {
     instagram: "https://instagram.com/wokorafoods",
     facebook: "https://facebook.com/wokorafoods",
@@ -20,13 +19,14 @@ export const BRAND = {
   },
 };
 
-export const WALL_ART = [
-  "Good Food Better Mood",
-  "Eat Drink Chill Repeat",
-  "Good Food Good Vibes",
-  "Momos Noodles Mood",
-  "Burger Fries Friends Happiness",
-];
+export function googleMapsEmbed(address: string) {
+  return `https://maps.google.com/maps?q=${encodeURIComponent(address)}&hl=en&z=16&output=embed`;
+}
+
+export function brandWhatsApp() {
+  const digits = BRAND.phone.replace(/\D/g, "");
+  return digits.startsWith("91") ? digits : `91${digits}`;
+}
 
 export const GST_RATE = 0.05;
 
@@ -49,10 +49,6 @@ export function displayOrderId(id: string) {
 export function displayOrderNumber(serial?: number | null) {
   if (!serial) return "—";
   return `#${String(serial).padStart(3, "0")}`;
-}
-
-export function localMenuImage(slug: string, fallback: string) {
-  return fallback;
 }
 
 export function loyaltyFromTotal(total: number) {

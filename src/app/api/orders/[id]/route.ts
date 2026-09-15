@@ -3,7 +3,9 @@ import { getServerSession } from "next-auth";
 import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
 import { printReceipt } from "@/lib/printReceipt";
-import { notifyOrderEta } from "@/lib/notify";
+import { afterOrderUpdated, type OrderUpdatedEvent } from "@/lib/orderEvents";
+import { DEFAULT_STORE_ID } from "@/lib/store";
+import { attachItemCustomizations } from "@/lib/cartPersistence";
 
 const STATUSES = new Set(["placed", "preparing", "ready", "served", "cancelled"]);
 
@@ -28,8 +30,11 @@ export async function GET(_request: Request, { params }: { params: { id: string 
   if (session.user.role !== "admin" && order.userId !== session.user.id) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
+  if (session.user.role === "admin" && order.storeId !== (session.user.storeId || DEFAULT_STORE_ID)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
-  return NextResponse.json({ order });
+  return NextResponse.json({ order: (await attachItemCustomizations([order]))[0] });
 }
 
 export async function PATCH(request: Request, { params }: { params: { id: string } }) {
@@ -68,17 +73,20 @@ export async function PATCH(request: Request, { params }: { params: { id: string
   }
 
   if (body.reprint) {
+    const printItems = (
+      await prisma.orderItem.findMany({
+        where: { orderId: existing.id },
+        include: { menuItem: true },
+      })
+    );
+    const withNotes = (await attachItemCustomizations([{ items: printItems }]))[0];
     await printReceipt({
       id: existing.id,
       tableNumber: existing.tableNumber,
       type: existing.type as "dine_in" | "takeaway",
-      items: (
-        await prisma.orderItem.findMany({
-          where: { orderId: existing.id },
-          include: { menuItem: true },
-        })
-      ).map((item) => ({
+      items: withNotes.items.map((item) => ({
         name: item.menuItem.name,
+        customization: item.customization || "",
         quantity: item.quantity,
         price: item.priceAtOrder,
       })),
@@ -126,12 +134,17 @@ export async function PATCH(request: Request, { params }: { params: { id: string
     },
   });
 
-  if (data.etaMinutes) {
-    await notifyOrderEta({
-      ...order,
-      etaMinutes: data.etaMinutes,
-    });
-  }
+  const updated: OrderUpdatedEvent = {
+    type: "OrderUpdated",
+    storeId: order.storeId,
+    orderId: order.id,
+    userId: order.userId,
+    serialNumber: order.serialNumber,
+    status: order.status,
+    etaMinutes: order.etaMinutes,
+  };
+
+  await afterOrderUpdated(updated);
 
   return NextResponse.json({ order });
 }

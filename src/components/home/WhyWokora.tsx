@@ -7,12 +7,12 @@ const FEATURES = [
   { title: "Fresh Ingredients", copy: "Daily prep, no freezer-aisle shortcuts.", icon: Leaf },
   { title: "Fast Service", copy: "Table-side digital orders hit the kitchen instantly.", icon: Timer },
   { title: "Cozy Ambience", copy: "Neon walls, red booths, pendant lights, plants.", icon: Sofa },
-  { title: "Wide Variety", copy: "Momos, dimsum, noodles, manchurian, burgers — one wok list.", icon: UtensilsCrossed },
+  { title: "Wide Variety", copy: "Burgers, momos, spring rolls, noodles, wraps, chilli potato, fried rice — one wok list.", icon: UtensilsCrossed },
 ];
 
 export function WhyWokora() {
   return (
-    <section className="bg-brand-glow py-16">
+    <section className="bg-brand-glow py-12 sm:py-16">
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
         <h2 className="heading-underline font-display text-3xl font-bold">Why Wokora Foods</h2>
         <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">

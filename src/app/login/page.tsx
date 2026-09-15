@@ -35,7 +35,7 @@ function LoginForm() {
     const session = await getSession();
     if (session?.user.role === "admin") {
       router.push("/admin");
-    } else if (callbackUrl.startsWith("http") || callbackUrl === "/menu") {
+    } else if (callbackUrl.startsWith("http")) {
       router.push("/account");
     } else {
       router.push(callbackUrl);
@@ -52,7 +52,7 @@ function LoginForm() {
           <p className="mt-4 text-brand-gold">Wokora Foods · Good Food. Better Mood.</p>
         </div>
       </div>
-      <div className="flex items-center justify-center px-6 py-12">
+      <div className="flex items-center justify-center px-4 py-10 sm:px-6 sm:py-12">
         <div className="w-full max-w-md">
           <Logo />
           <h1 className="mt-8 font-display text-3xl font-bold">Login</h1>
@@ -91,7 +91,7 @@ function LoginForm() {
               Continue with Google
             </button>
           )}
-          <div className="mt-4 flex justify-between text-sm text-brand-cream/70">
+          <div className="mt-4 flex flex-col gap-2 text-sm text-brand-cream/70 sm:flex-row sm:justify-between">
             <Link href="/forgot-password">Forgot password</Link>
             <Link href="/signup" className="text-brand-gold">
               Create New Account

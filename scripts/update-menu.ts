@@ -2,37 +2,26 @@ import { PrismaClient } from "@prisma/client";
 import { MENU_CATEGORIES, MENU_ITEMS } from "../src/data/menu";
 
 const prisma = new PrismaClient();
+const storeId = "wokora";
+const keepItems = MENU_ITEMS.map((row) => row.slug);
 
 async function main() {
-  const pizza = await prisma.category.findUnique({
-    where: { slug: "pizza" },
-    include: { items: true },
+  await prisma.store.upsert({
+    where: { id: storeId },
+    update: { name: "Wokora Foods" },
+    create: { id: storeId, slug: storeId, name: "Wokora Foods" },
   });
-
-  if (pizza) {
-    await prisma.menuItem.updateMany({
-      where: { categoryId: pizza.id },
-      data: { isAvailable: false, isFeatured: false },
-    });
-  }
-
-  const chinese = await prisma.category.findUnique({ where: { slug: "chinese" } });
-  if (chinese) {
-    await prisma.menuItem.updateMany({
-      where: { categoryId: chinese.id },
-      data: { isAvailable: false },
-    });
-  }
 
   for (const category of MENU_CATEGORIES) {
     await prisma.category.upsert({
-      where: { slug: category.slug },
+      where: { storeId_slug: { storeId, slug: category.slug } },
       update: {
         name: category.name,
         sortOrder: category.sortOrder,
         iconUrl: category.image,
       },
       create: {
+        storeId,
         name: category.name,
         slug: category.slug,
         sortOrder: category.sortOrder,
@@ -41,14 +30,14 @@ async function main() {
     });
   }
 
-  const categories = await prisma.category.findMany();
+  const categories = await prisma.category.findMany({ where: { storeId } });
   const bySlug = Object.fromEntries(categories.map((row) => [row.slug, row.id]));
 
   for (const item of MENU_ITEMS) {
     const categoryId = bySlug[item.category];
     if (!categoryId) continue;
     await prisma.menuItem.upsert({
-      where: { slug: item.slug },
+      where: { storeId_slug: { storeId, slug: item.slug } },
       update: {
         name: item.name,
         categoryId,
@@ -57,9 +46,10 @@ async function main() {
         imageUrl: item.imageUrl,
         isVeg: item.isVeg,
         isAvailable: true,
-        isFeatured: "isFeatured" in item ? Boolean(item.isFeatured) : false,
+        isFeatured: Boolean(item.isFeatured),
       },
       create: {
+        storeId,
         name: item.name,
         slug: item.slug,
         categoryId,
@@ -67,12 +57,26 @@ async function main() {
         price: item.price,
         imageUrl: item.imageUrl,
         isVeg: item.isVeg,
-        isFeatured: "isFeatured" in item ? Boolean(item.isFeatured) : false,
+        isFeatured: Boolean(item.isFeatured),
       },
     });
   }
 
-  console.log("Menu updated: pizza hidden, Asian plates added, images refreshed.");
+  await prisma.menuItem.updateMany({
+    where: { storeId, slug: { notIn: keepItems } },
+    data: { isAvailable: false, isFeatured: false },
+  });
+
+  const keep = new Set<string>(MENU_CATEGORIES.map((row) => row.slug));
+  const staleCategories = categories.filter((row) => !keep.has(row.slug));
+  for (const category of staleCategories) {
+    await prisma.menuItem.updateMany({
+      where: { categoryId: category.id },
+      data: { isAvailable: false, isFeatured: false },
+    });
+  }
+
+  console.log("Menu locked to burger, coffee, momos, spring rolls, noodles, chilli potato, fried rice, wraps, lollipop.");
 }
 
 main()

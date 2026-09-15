@@ -2,13 +2,21 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
+import { BRAND } from "@/lib/constants";
 
 export async function GET() {
   try {
     const row = await prisma.cafeSettings.upsert({
       where: { id: "cafe" },
-      update: {},
-      create: { id: "cafe" },
+      update: { address: BRAND.address, email: BRAND.email, phone: BRAND.phone },
+      create: {
+        id: "cafe",
+        name: BRAND.name,
+        phone: BRAND.phone,
+        email: BRAND.email,
+        address: BRAND.address,
+        hours: "11:00 AM – 11:00 PM",
+      },
     });
     return NextResponse.json({ settings: row });
   } catch (error) {
@@ -16,9 +24,9 @@ export async function GET() {
     return NextResponse.json({
       settings: {
         name: "Wokora Foods",
-        phone: "+91 98765 43210",
-        email: "hello@wokorafoods.com",
-        address: "12, Food Street, Koramangala",
+        phone: BRAND.phone,
+        email: BRAND.email,
+        address: BRAND.address,
         hours: "11:00 AM – 11:00 PM",
       },
     });
@@ -44,9 +52,9 @@ export async function PATCH(request: Request) {
     create: {
       id: "cafe",
       name: body.name || "Wokora Foods",
-      phone: body.phone || "+91 98765 43210",
-      email: body.email || "hello@wokorafoods.com",
-      address: body.address || "",
+      phone: body.phone || BRAND.phone,
+      email: body.email || BRAND.email,
+      address: body.address || BRAND.address,
       hours: body.hours || "",
     },
   });

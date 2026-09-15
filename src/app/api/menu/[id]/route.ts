@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
+import { cacheDel, menuCacheKey } from "@/lib/cache/menu";
+import { DEFAULT_STORE_ID } from "@/lib/store";
 
 async function assertAdmin() {
   const session = await getServerSession(authOptions);
@@ -31,6 +33,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
     include: { category: true },
   });
 
+  await cacheDel(menuCacheKey(DEFAULT_STORE_ID));
   return NextResponse.json({ item });
 }
 
@@ -39,5 +42,6 @@ export async function DELETE(_request: Request, { params }: { params: { id: stri
   if (denied) return denied;
 
   await prisma.menuItem.delete({ where: { id: params.id } });
+  await cacheDel(menuCacheKey(DEFAULT_STORE_ID));
   return NextResponse.json({ ok: true });
 }

@@ -14,7 +14,7 @@ type Order = {
   totalAmount: number;
   createdAt: string;
   user: { name: string; phone: string };
-  items: { quantity: number; menuItem: { name: string } }[];
+  items: { id?: string; quantity: number; priceAtOrder?: number; customization?: string; menuItem: { name: string } }[];
 };
 
 const STATUSES = ["placed", "preparing", "ready", "served", "cancelled"];
@@ -67,7 +67,7 @@ export default function AdminOrdersPage() {
     <div className="mx-auto max-w-7xl px-4 py-10">
       <h1 className="heading-underline font-display text-3xl font-bold">Live orders</h1>
       <p className="mt-3 text-sm text-brand-cream/60">
-        Orders are queued by serial number. Setting a wait time notifies the customer in-app and by email.
+        Orders fan out over SQS to kitchen, print, and customer notify. This board also listens on WebSocket.
       </p>
       <div className="mt-8 grid gap-4 md:grid-cols-2">
         {orders.map((order) => (
@@ -88,10 +88,18 @@ export default function AdminOrdersPage() {
               </div>
               <span className="rounded-full bg-brand-red/20 px-3 py-1 text-xs uppercase">{order.status}</span>
             </div>
-            <ul className="mt-3 text-sm text-brand-cream/75">
-              {order.items.map((item) => (
-                <li key={item.menuItem.name}>
-                  {item.quantity} × {item.menuItem.name}
+            <ul className="mt-3 space-y-2 text-sm text-brand-cream/75">
+              {order.items.map((item, index) => (
+                <li key={item.id || `${item.menuItem.name}-${index}`}>
+                  <div className="flex justify-between gap-3">
+                    <span>
+                      {item.quantity} × {item.menuItem.name}
+                    </span>
+                    {item.priceAtOrder ? <span>{formatINR(item.priceAtOrder * item.quantity)}</span> : null}
+                  </div>
+                  {item.customization ? (
+                    <p className="mt-0.5 text-xs text-brand-gold/80">{item.customization}</p>
+                  ) : null}
                 </li>
               ))}
             </ul>

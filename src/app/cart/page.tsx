@@ -3,15 +3,15 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { QuantityStepper } from "@/components/ui/QuantityStepper";
 import { GST_RATE, TABLE_COUNT, formatINR } from "@/lib/constants";
 import { cartSubtotal, useCartStore } from "@/store/cartStore";
+import { useCartAccess } from "@/hooks/useCartAccess";
 
 export default function CartPage() {
   const router = useRouter();
-  const { status } = useSession();
+  const { status, isAdmin, canUseCart } = useCartAccess();
   const { items, increment, decrement, removeItem, tableNumber, setTableNumber, orderType, setOrderType, clear } =
     useCartStore();
   const [notes, setNotes] = useState("");
@@ -23,8 +23,12 @@ export default function CartPage() {
   const tax = Math.round(subtotal * GST_RATE);
   const total = subtotal + tax;
 
+  useEffect(() => {
+    if (isAdmin) router.replace("/admin");
+  }, [isAdmin, router]);
+
   const placeOrder = async () => {
-    if (status !== "authenticated") {
+    if (!canUseCart) {
       router.push("/login?callbackUrl=/cart");
       return;
     }
@@ -42,7 +46,12 @@ export default function CartPage() {
         tableNumber,
         notes,
         paymentMethod,
-        items: items.map((item) => ({ menuItemId: item.id, quantity: item.quantity })),
+        items: items.map((item) => ({
+          menuItemId: item.menuItemId || item.id.split("::")[0],
+          quantity: item.quantity,
+          selections: item.selections,
+          customization: item.customization,
+        })),
       }),
     });
     const data = await res.json();
@@ -55,11 +64,33 @@ export default function CartPage() {
     router.push(paymentMethod === "cash" ? `/order/${data.order.id}` : `/pay/${data.order.id}`);
   };
 
+  if (status === "loading") {
+    return <div className="px-4 py-20 text-center text-brand-cream/60">Loading cart...</div>;
+  }
+
+  if (isAdmin) {
+    return <div className="px-4 py-20 text-center text-brand-cream/60">Opening kitchen...</div>;
+  }
+
+  if (status === "unauthenticated") {
+    return (
+      <div className="mx-auto max-w-3xl px-4 py-20 text-center">
+        <h1 className="font-display text-3xl font-bold">Login to use your cart</h1>
+        <p className="mt-3 text-sm text-brand-cream/60">
+          Add dishes, extras, and totals after you sign in. Kitchen login opens the orders board instead.
+        </p>
+        <Link href="/login?callbackUrl=/cart" className="btn-glow mt-6 inline-block px-6 py-3">
+          Login
+        </Link>
+      </div>
+    );
+  }
+
   if (items.length === 0) {
     return (
       <div className="mx-auto max-w-3xl px-4 py-20 text-center">
         <h1 className="font-display text-3xl font-bold">Your tray is empty</h1>
-        <Link href="/menu" className="btn-glow mt-6 inline-block px-6 py-3">
+          <Link href="/menu" className="btn-glow mt-6 inline-block px-6 py-3">
           Browse menu
         </Link>
       </div>
@@ -67,18 +98,21 @@ export default function CartPage() {
   }
 
   return (
-    <div className="mx-auto grid max-w-6xl gap-8 px-4 py-10 sm:px-6 lg:grid-cols-[1.4fr_0.8fr]">
+    <div className="mx-auto grid max-w-6xl gap-6 px-4 py-8 sm:px-6 sm:py-10 lg:grid-cols-[1.4fr_0.8fr] lg:gap-8">
       <section>
         <h1 className="heading-underline font-display text-3xl font-bold">Cart</h1>
         <div className="mt-8 space-y-4">
           {items.map((item) => (
-            <article key={item.id} className="card-surface flex gap-4 p-3">
-              <div className="relative h-20 w-20 overflow-hidden rounded-xl">
+            <article key={item.id} className="card-surface flex gap-3 p-3 sm:gap-4">
+              <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl sm:h-20 sm:w-20">
                 <Image src={item.imageUrl} alt={item.name} fill className="object-cover" />
               </div>
-              <div className="flex flex-1 items-center justify-between gap-3">
-                <div>
-                  <h2 className="font-display font-semibold">{item.name}</h2>
+              <div className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+                <div className="min-w-0">
+                  <h2 className="font-display font-semibold leading-tight">{item.name}</h2>
+                  {item.customization ? (
+                    <p className="mt-0.5 text-xs text-brand-cream/50">{item.customization}</p>
+                  ) : null}
                   <p className="text-sm text-brand-gold">{formatINR(item.price)}</p>
                 </div>
                 <div className="flex items-center gap-3">
@@ -161,7 +195,7 @@ export default function CartPage() {
         </dl>
         {error && <p className="mt-3 text-sm text-brand-red">{error}</p>}
         <button onClick={placeOrder} disabled={loading} className="btn-glow mt-5 w-full py-3">
-          {status !== "authenticated"
+          {status !== "authenticated" || !canUseCart
             ? "Sign in to place your order"
             : loading
               ? "Placing order..."

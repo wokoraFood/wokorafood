@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
-import { BRAND } from "@/lib/constants";
+import { BRAND, brandWhatsApp } from "@/lib/constants";
 import { readJson } from "@/lib/safeJson";
 
 type Ticket = {
@@ -54,7 +54,7 @@ export default function SupportPage() {
           Email<br /><span className="text-brand-gold">{BRAND.email}</span>
         </a>
         <a
-          href={`https://wa.me/919876543210?text=${encodeURIComponent("Hi Wokora Foods, I need some help.")}`}
+          href={`https://wa.me/${brandWhatsApp()}?text=${encodeURIComponent("Hi Wokora Foods, I need some help.")}`}
           className="card-surface p-4 text-sm"
         >
           WhatsApp<br /><span className="text-brand-gold">Chat now</span>

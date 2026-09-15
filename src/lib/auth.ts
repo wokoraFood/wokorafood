@@ -5,6 +5,7 @@ import bcrypt from "bcryptjs";
 import { prisma } from "./prisma";
 import { loginSchema } from "./validations";
 import { normalizeIdentifier } from "./phone";
+import { DEFAULT_STORE_ID, ensureDefaultStore } from "./store";
 
 export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
@@ -13,6 +14,14 @@ export const authOptions: NextAuthOptions = {
     signIn: "/login",
   },
   providers: [
+    ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
+      ? [
+          GoogleProvider({
+            clientId: process.env.GOOGLE_CLIENT_ID,
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+          }),
+        ]
+      : []),
     CredentialsProvider({
       name: "Phone or Email",
       credentials: {
@@ -23,10 +32,12 @@ export const authOptions: NextAuthOptions = {
         const parsed = loginSchema.safeParse(credentials);
         if (!parsed.success) return null;
 
+        await ensureDefaultStore();
         const identifier = normalizeIdentifier(parsed.data.identifier);
         const password = parsed.data.password;
         const user = await prisma.user.findFirst({
           where: {
+            storeId: DEFAULT_STORE_ID,
             OR: [{ phone: identifier }, { email: identifier.toLowerCase() }],
           },
         });
@@ -41,38 +52,29 @@ export const authOptions: NextAuthOptions = {
           email: user.email,
           phone: user.phone,
           role: user.role as "customer" | "admin",
+          storeId: DEFAULT_STORE_ID,
         };
       },
     }),
-    ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
-      ? [
-          GoogleProvider({
-            clientId: process.env.GOOGLE_CLIENT_ID,
-            clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-          }),
-        ]
-      : []),
   ],
   callbacks: {
     async signIn({ user, account }) {
       if (account?.provider !== "google" || !user.email) return true;
 
-      const existing = await prisma.user.findUnique({
-        where: { email: user.email },
-      });
-
+      const existing = await prisma.user.findUnique({ where: { email: user.email } });
       if (!existing) {
+        await ensureDefaultStore();
         await prisma.user.create({
           data: {
             name: user.name || "Wokora Guest",
             email: user.email,
-            phone: `g${account.providerAccountId.replace(/\D/g, "").slice(-10).padStart(10, "0")}`,
+            phone: `g${String(user.id || Date.now()).replace(/\D/g, "").slice(-10).padStart(10, "0")}`,
             passwordHash: await bcrypt.hash(crypto.randomUUID(), 10),
             role: "customer",
+            storeId: DEFAULT_STORE_ID,
           },
         });
       }
-
       return true;
     },
     async jwt({ token, user }) {
@@ -80,15 +82,17 @@ export const authOptions: NextAuthOptions = {
         token.id = user.id;
         token.phone = user.phone || "";
         token.role = (user.role as "customer" | "admin") || "customer";
+        token.storeId = DEFAULT_STORE_ID;
       } else if (token.email) {
-        const dbUser = await prisma.user.findUnique({
-          where: { email: token.email },
-        });
+        const dbUser = await prisma.user.findUnique({ where: { email: token.email } });
         if (dbUser) {
           token.id = dbUser.id;
           token.phone = dbUser.phone;
           token.role = dbUser.role as "customer" | "admin";
         }
+        token.storeId = DEFAULT_STORE_ID;
+      } else {
+        token.storeId = DEFAULT_STORE_ID;
       }
       return token;
     },
@@ -96,6 +100,7 @@ export const authOptions: NextAuthOptions = {
       session.user.id = token.id;
       session.user.phone = token.phone;
       session.user.role = token.role;
+      session.user.storeId = DEFAULT_STORE_ID;
       return session;
     },
   },

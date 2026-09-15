@@ -1,29 +1,50 @@
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
 }
 
 datasource db {
-  // Local default is SQLite so `npm run db:push` works without Docker.
-  // For Neon / Railway / Render production, switch provider to "postgresql"
-  // and set DATABASE_URL to your hosted Postgres URI.
+  // Local: SQLite on laptop and Hostinger VPS. Switch to postgresql if you install Postgres on the box.
   provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
+model Store {
+  id        String     @id
+  slug      String     @unique
+  name      String
+  createdAt DateTime   @default(now())
+  users     User[]
+  orders    Order[]
+  carts     CartLine[]
+  categories Category[]
+  menuItems MenuItem[]
+}
+
 model User {
-  id            String    @id @default(cuid())
-  name          String
-  phone         String    @unique
-  email         String?   @unique
-  passwordHash  String
-  role          String    @default("customer")
-  loyaltyPoints Int       @default(0)
-  phoneVerified Boolean   @default(false)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  orders        Order[]
-  addresses     Address[]
-  notifications Notification[]
+  id              String         @id @default(cuid())
+  cognitoSub      String?        @unique
+  storeId         String         @default("wokora")
+  store           Store          @relation(fields: [storeId], references: [id])
+  name            String
+  phone           String
+  email           String?        @unique
+  passwordHash    String
+  role            String         @default("customer")
+  loyaltyPoints   Int            @default(0)
+  phoneVerified   Boolean        @default(false)
+  dietPreference  String         @default("all")
+  themePreference String         @default("dark")
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  orders          Order[]
+  addresses       Address[]
+  notifications   Notification[]
+  cartLines       CartLine[]
+
+  @@unique([storeId, phone])
+  @@index([storeId])
+  @@index([cognitoSub])
 }
 
 model Address {
@@ -38,17 +59,24 @@ model Address {
 
 model Category {
   id        String     @id @default(cuid())
+  storeId   String     @default("wokora")
+  store     Store      @relation(fields: [storeId], references: [id])
   name      String
-  slug      String     @unique
+  slug      String
   iconUrl   String?
   sortOrder Int        @default(0)
   items     MenuItem[]
+
+  @@unique([storeId, slug])
+  @@index([storeId])
 }
 
 model MenuItem {
   id          String      @id @default(cuid())
+  storeId     String      @default("wokora")
+  store       Store       @relation(fields: [storeId], references: [id])
   name        String
-  slug        String      @unique
+  slug        String
   categoryId  String
   category    Category    @relation(fields: [categoryId], references: [id])
   description String
@@ -58,17 +86,43 @@ model MenuItem {
   isAvailable Boolean     @default(true)
   isFeatured  Boolean     @default(false)
   orderItems  OrderItem[]
+  cartLines   CartLine[]
+
+  @@unique([storeId, slug])
+  @@index([storeId])
+}
+
+model CartLine {
+  id             String   @id @default(cuid())
+  storeId        String   @default("wokora")
+  store          Store    @relation(fields: [storeId], references: [id])
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  menuItemId     String
+  menuItem       MenuItem @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+  quantity       Int
+  configKey      String   @default("default")
+  customization  String   @default("")
+  selections     String   @default("{}")
+  unitPrice      Float    @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([userId, storeId, menuItemId, configKey])
+  @@index([storeId, userId])
 }
 
 model Order {
-  id             String     @id @default(cuid())
-  serialNumber   Int        @default(0)
+  id             String      @id @default(cuid())
+  storeId        String      @default("wokora")
+  store          Store       @relation(fields: [storeId], references: [id])
+  serialNumber   Int         @default(0)
   userId         String
-  user           User       @relation(fields: [userId], references: [id])
+  user           User        @relation(fields: [userId], references: [id])
   tableNumber    String?
-  type           String     @default("dine_in")
-  status         String     @default("placed")
-  paymentStatus  String     @default("pending")
+  type           String      @default("dine_in")
+  status         String      @default("placed")
+  paymentStatus  String      @default("pending")
   paymentMethod  String?
   etaMinutes     Int?
   etaSetAt       DateTime?
@@ -77,14 +131,22 @@ model Order {
   totalAmount    Float
   notes          String?
   printedAt      DateTime?
-  createdAt      DateTime   @default(now())
-  updatedAt      DateTime   @updatedAt
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
   items          OrderItem[]
   printJobs      PrintJob[]
+
+  @@unique([storeId, serialNumber])
+  @@index([userId])
+  @@index([storeId])
+  @@index([storeId, status])
+  @@index([storeId, userId])
+  @@index([storeId, createdAt])
 }
 
 model Notification {
   id        String   @id @default(cuid())
+  storeId   String   @default("wokora")
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   title     String
@@ -92,26 +154,33 @@ model Notification {
   orderId   String?
   read      Boolean  @default(false)
   createdAt DateTime @default(now())
+
+  @@index([userId, read])
+  @@index([storeId, userId])
 }
 
 model OrderItem {
-  id           String   @id @default(cuid())
-  orderId      String
-  order        Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  menuItemId   String
-  menuItem     MenuItem @relation(fields: [menuItemId], references: [id])
-  quantity     Int
-  priceAtOrder Float
+  id             String   @id @default(cuid())
+  orderId        String
+  order          Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menuItemId     String
+  menuItem       MenuItem @relation(fields: [menuItemId], references: [id])
+  quantity       Int
+  priceAtOrder   Float
+  customization  String   @default("")
 }
 
 model PrintJob {
   id        String    @id @default(cuid())
+  storeId   String    @default("wokora")
   orderId   String
   order     Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
   status    String    @default("pending")
   payload   String
   createdAt DateTime  @default(now())
   printedAt DateTime?
+
+  @@index([storeId, status])
 }
 
 model Newsletter {
@@ -121,16 +190,16 @@ model Newsletter {
 }
 
 model SupportTicket {
-  id        String          @id @default(cuid())
+  id        String         @id @default(cuid())
   userId    String?
   name      String
   phone     String
   email     String?
   subject   String
   message   String
-  status    String          @default("open")
-  createdAt DateTime        @default(now())
-  updatedAt DateTime        @updatedAt
+  status    String         @default("open")
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
   replies   SupportReply[]
 }
 
@@ -147,8 +216,8 @@ model SupportReply {
 model CafeSettings {
   id      String @id @default("cafe")
   name    String @default("Wokora Foods")
-  phone   String @default("+91 98765 43210")
-  email   String @default("hello@wokorafoods.com")
-  address String @default("12, Food Street, Koramangala 4th Block, Bengaluru 560034")
+  phone   String @default("+91 81782 06648")
+  email   String @default("wokorafoods@gmail.com")
+  address String @default("Shop No. 23, LGF, Siddharth Vihar, Opus Plot, Yojna, Ghaziabad, UP 201009")
   hours   String @default("11:00 AM – 11:00 PM")
 }

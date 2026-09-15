@@ -1,0 +1,9 @@
+{
+  "framework": "nextjs",
+  "buildCommand": "prisma generate && prisma db push && tsx prisma/seed.ts && tsx scripts/update-menu.ts && next build",
+  "env": {
+    "DATABASE_URL": "file:./dev.db",
+    "STORE_ID": "wokora",
+    "PRINT_MODE": "kiosk"
+  }
+}
