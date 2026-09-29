@@ -8,17 +8,11 @@ import { DietToggle, type DietPreference } from "@/components/menu/DietToggle";
 import { DishNameRow } from "@/components/menu/DishNameRow";
 import { MenuCartRail } from "@/components/menu/MenuCartRail";
 import type { FoodCardItem } from "@/components/menu/CustomizeItemPanel";
-import { ALLOWED_CATEGORY_SLUGS, MENU_CATEGORIES } from "@/data/menu";
-import { uniqueByName } from "@/lib/uniqueByName";
+import { filterMenuItems, parseDiet } from "@/lib/menuView";
 
 type MenuItem = FoodCardItem & {
   category: { name: string; slug: string };
 };
-
-function parseDiet(value: string | null): DietPreference {
-  if (value === "veg" || value === "nonveg" || value === "all") return value;
-  return "all";
-}
 
 function CategoryMenuInner() {
   const params = useParams<{ slug: string }>();
@@ -40,27 +34,23 @@ function CategoryMenuInner() {
       .catch(() => setItems([]));
   }, []);
 
-  const dishes = useMemo(() => {
-    const rows = items.filter((item) => {
-      if (item.category.slug !== slug) return false;
-      const matchesDiet = diet === "all" || (diet === "veg" ? item.isVeg : !item.isVeg);
-      const matchesQuery =
-        !query ||
-        item.name.toLowerCase().includes(query.toLowerCase()) ||
-        item.description.toLowerCase().includes(query.toLowerCase());
-      return matchesDiet && matchesQuery;
-    });
-    return uniqueByName(rows);
-  }, [items, slug, diet, query]);
+  const dishes = useMemo(
+    () => filterMenuItems(
+      items.filter((item) => item.category.slug === slug),
+      diet,
+      query
+    ),
+    [items, slug, diet, query]
+  );
 
-  const title = MENU_CATEGORIES.find((row) => row.slug === slug)?.name || slug.replace(/-/g, " ");
+  const title = items.find((item) => item.category.slug === slug)?.category.name || slug.replace(/-/g, " ");
 
   const changeDiet = (next: DietPreference) => {
     setDiet(next);
     router.replace(`/menu/${slug}?diet=${next}`, { scroll: false });
   };
 
-  if (!ALLOWED_CATEGORY_SLUGS.includes(slug)) {
+  if (!items.some((item) => item.category.slug === slug) && items.length > 0) {
     return (
       <div className="mx-auto max-w-3xl px-4 py-20 text-center">
         <p className="text-brand-cream/60">That plate is not on the wok list.</p>

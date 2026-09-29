@@ -1,35 +1,35 @@
+import { readFileSync } from "fs";
+import { resolve } from "path";
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
-const prisma = new PrismaClient();
-
-async function ensureDemoUser(data: {
-  name: string;
-  phone: string;
-  email: string;
-  password: string;
-  role: "admin" | "customer";
-  loyaltyPoints?: number;
-}) {
-  const existing = await prisma.user.findUnique({
-    where: { storeId_phone: { storeId: "wokora", phone: data.phone } },
-  });
-  if (existing) return existing;
-
-  const passwordHash = await bcrypt.hash(data.password, 10);
-  return prisma.user.create({
-    data: {
-      name: data.name,
-      phone: data.phone,
-      email: data.email,
-      passwordHash,
-      role: data.role,
-      phoneVerified: true,
-      storeId: "wokora",
-      loyaltyPoints: data.loyaltyPoints || 0,
-    },
-  });
+function loadEnv() {
+  try {
+    const file = resolve(process.cwd(), ".env");
+    const text = readFileSync(file, "utf8");
+    for (const line of text.split(/\r?\n/)) {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith("#")) continue;
+      const eq = trimmed.indexOf("=");
+      if (eq < 1) continue;
+      const key = trimmed.slice(0, eq).trim();
+      let value = trimmed.slice(eq + 1).trim();
+      if (
+        (value.startsWith('"') && value.endsWith('"')) ||
+        (value.startsWith("'") && value.endsWith("'"))
+      ) {
+        value = value.slice(1, -1);
+      }
+      if (!process.env[key]) process.env[key] = value;
+    }
+  } catch {
+    // Host already injected env (Docker / VPS)
+  }
 }
+
+loadEnv();
+
+const prisma = new PrismaClient();
 
 async function main() {
   await prisma.store.upsert({
@@ -38,23 +38,60 @@ async function main() {
     create: { id: "wokora", slug: "wokora", name: "Wokora Foods" },
   });
 
-  await ensureDemoUser({
-    name: "Wokora Admin",
-    phone: "9999999999",
-    email: "ivan.p@example.net",
-    password: "Admin@1234",
-    role: "admin",
+  const demoPhones = ["9999999999", "9876543210"];
+  const demoUsers = await prisma.user.findMany({
+    where: { phone: { in: demoPhones } },
+    select: { id: true },
   });
-  await ensureDemoUser({
-    name: "Aarav Mehta",
-    phone: "9876543210",
-    email: "aarav@example.com",
-    password: "Taste@1234",
-    role: "customer",
-    loyaltyPoints: 40,
-  });
+  const demoIds = demoUsers.map((user) => user.id);
+  if (demoIds.length) {
+    await prisma.printJob.deleteMany({ where: { order: { userId: { in: demoIds } } } });
+    await prisma.order.deleteMany({ where: { userId: { in: demoIds } } });
+    await prisma.cartLine.deleteMany({ where: { userId: { in: demoIds } } });
+    await prisma.notification.deleteMany({ where: { userId: { in: demoIds } } });
+    await prisma.user.deleteMany({ where: { id: { in: demoIds } } });
+  }
 
-  console.log("Demo kitchen and customer logins are ready. Existing users were left untouched.");
+  const phone = process.env.KITCHEN_ADMIN_PHONE?.replace(/\D/g, "");
+  const email = process.env.KITCHEN_ADMIN_EMAIL?.trim().toLowerCase();
+  const password = process.env.KITCHEN_ADMIN_PASSWORD;
+  const name = process.env.KITCHEN_ADMIN_NAME || "Wokora Kitchen";
+
+  if (phone && email && password) {
+    const passwordHash = await bcrypt.hash(password, 10);
+    const existing = await prisma.user.findFirst({
+      where: { storeId: "wokora", OR: [{ phone }, { email }] },
+    });
+
+    if (existing) {
+      await prisma.user.update({
+        where: { id: existing.id },
+        data: {
+          name,
+          phone,
+          email,
+          passwordHash,
+          role: "admin",
+          emailVerified: true,
+        },
+      });
+    } else {
+      await prisma.user.create({
+        data: {
+          name,
+          phone,
+          email,
+          passwordHash,
+          role: "admin",
+          emailVerified: true,
+          storeId: "wokora",
+        },
+      });
+    }
+    console.log("Kitchen admin is ready. Login opens the kitchen; customers cannot open /admin.");
+  } else {
+    console.log("Store is ready. Set KITCHEN_ADMIN_PHONE, KITCHEN_ADMIN_EMAIL, and KITCHEN_ADMIN_PASSWORD to create the kitchen login.");
+  }
 }
 
 main()

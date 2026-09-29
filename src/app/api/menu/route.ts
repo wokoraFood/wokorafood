@@ -4,12 +4,11 @@ import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
 import { cacheDel, cacheGet, cacheSet, menuCacheKey } from "@/lib/cache/menu";
 import { DEFAULT_STORE_ID } from "@/lib/store";
-import { ALLOWED_CATEGORY_SLUGS } from "@/data/menu";
 import { optionGroupsFor } from "@/lib/customizations";
-
-const allowed = new Set(ALLOWED_CATEGORY_SLUGS);
+import { serverErrorJson } from "@/lib/publicError";
 
 export async function GET(request: Request) {
+  try {
   const { searchParams } = new URL(request.url);
   const category = searchParams.get("category");
   const q = searchParams.get("q")?.trim();
@@ -25,7 +24,7 @@ export async function GET(request: Request) {
     if (cached) return NextResponse.json(cached);
   }
 
-  const items = (await prisma.menuItem.findMany({
+  const items = await prisma.menuItem.findMany({
     where: {
       storeId,
       ...(showHidden ? {} : { isAvailable: true }),
@@ -39,13 +38,13 @@ export async function GET(request: Request) {
     },
     include: { category: true },
     orderBy: [{ category: { sortOrder: "asc" } }, { name: "asc" }],
-  })).filter((item) => showHidden || allowed.has(item.category.slug));
+  });
 
   const used = new Set(items.map((item) => item.categoryId));
   const categories = (await prisma.category.findMany({
     where: { storeId },
     orderBy: { sortOrder: "asc" },
-  })).filter((row) => (showHidden || used.has(row.id)) && allowed.has(row.slug));
+  })).filter((row) => showHidden || used.has(row.id));
 
   const payload = {
     items: items.map((item) => ({
@@ -56,6 +55,10 @@ export async function GET(request: Request) {
   };
   if (!q) await cacheSet(cacheKey, payload);
   return NextResponse.json(payload);
+  } catch (error) {
+    console.error("[menu GET]", error);
+    return serverErrorJson();
+  }
 }
 
 export async function POST(request: Request) {
@@ -65,17 +68,27 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json();
+  const storeId = session.user.storeId || DEFAULT_STORE_ID;
+  try {
+  const baseSlug = (body.slug || String(body.name || "").toLowerCase().replace(/[^a-z0-9]+/g, "-") || "item").replace(/^-|-$/g, "");
+  let slug = baseSlug;
+  let n = 2;
+  while (await prisma.menuItem.findUnique({ where: { storeId_slug: { storeId, slug } } })) {
+    slug = `${baseSlug}-${n}`;
+    n += 1;
+  }
+
   const item = await prisma.menuItem.create({
     data: {
-      storeId: session.user.storeId || DEFAULT_STORE_ID,
+      storeId,
       name: body.name,
-      slug: body.slug || body.name.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+      slug,
       categoryId: body.categoryId,
       description: body.description || "",
       price: Number(body.price),
-      imageUrl: body.imageUrl || "/images/menu/placeholder.png",
+      imageUrl: body.imageUrl || "",
       isVeg: Boolean(body.isVeg),
-      isAvailable: body.isAvailable !== false,
+      isAvailable: body.isAvailable === true,
       isFeatured: Boolean(body.isFeatured),
     },
     include: { category: true },
@@ -83,4 +96,8 @@ export async function POST(request: Request) {
 
   await cacheDel(menuCacheKey(session.user.storeId || DEFAULT_STORE_ID));
   return NextResponse.json({ item });
+  } catch (error) {
+    console.error("[menu POST]", error);
+    return serverErrorJson();
+  }
 }

@@ -17,6 +17,7 @@ import {
 import { BRAND } from "@/lib/constants";
 import { MENU_CATEGORIES } from "@/data/menu";
 import { useCafeAddress } from "@/hooks/useCafeAddress";
+import { CafeMap } from "@/components/location/CafeMap";
 
 const NAV = [
   { href: "#who", label: "Who we are" },
@@ -306,9 +307,7 @@ export default function AboutPage() {
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-gold">Visit us</p>
         <h2 className="heading-underline mt-2 font-display text-3xl font-bold sm:text-4xl">Come to {BRAND.name}.</h2>
         <div className="mt-10 card-surface overflow-hidden lg:grid lg:grid-cols-2">
-          <div className="relative min-h-[280px] sm:min-h-[360px]">
-            <iframe key={mapSrc} title={`${BRAND.name} map`} src={mapSrc} className="absolute inset-0 h-full w-full border-0" loading="lazy" />
-          </div>
+          <CafeMap address={address} mapSrc={mapSrc} className="min-h-[280px] sm:min-h-[360px]" />
           <div className="space-y-5 p-5 sm:p-8 md:p-12">
             <p className="flex gap-3 text-brand-cream/80">
               <MapPin className="mt-0.5 h-5 w-5 shrink-0 text-brand-red" />

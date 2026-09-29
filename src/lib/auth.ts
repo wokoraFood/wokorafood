@@ -6,6 +6,29 @@ import { prisma } from "./prisma";
 import { loginSchema } from "./validations";
 import { normalizeIdentifier } from "./phone";
 import { DEFAULT_STORE_ID, ensureDefaultStore } from "./store";
+import { verifyOtp } from "./otp";
+import { loginKitchenAdmin } from "./kitchenAdmin";
+
+function kitchenAdminEmail() {
+  return process.env.KITCHEN_ADMIN_EMAIL?.trim().toLowerCase() || "";
+}
+
+function sessionUser(user: {
+  id: string;
+  name: string;
+  email: string | null;
+  phone: string;
+  role: string;
+}) {
+  return {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    phone: user.phone,
+    role: user.role as "customer" | "admin",
+    storeId: DEFAULT_STORE_ID,
+  };
+}
 
 export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
@@ -27,6 +50,7 @@ export const authOptions: NextAuthOptions = {
       credentials: {
         identifier: { label: "Phone or Email", type: "text" },
         password: { label: "Password", type: "password" },
+        otp: { label: "Email OTP", type: "text" },
       },
       async authorize(credentials) {
         const parsed = loginSchema.safeParse(credentials);
@@ -34,7 +58,32 @@ export const authOptions: NextAuthOptions = {
 
         await ensureDefaultStore();
         const identifier = normalizeIdentifier(parsed.data.identifier);
-        const password = parsed.data.password;
+        const otpRaw = parsed.data.otp?.trim() || "";
+        const otp = /^\d{4,8}$/.test(otpRaw) ? otpRaw : "";
+        const password = parsed.data.password && parsed.data.password !== "undefined" ? parsed.data.password : "";
+
+        if (otp) {
+          if (!identifier.includes("@")) return null;
+          const ok = await verifyOtp(identifier, otp, "login");
+          if (!ok) return null;
+          const user = await prisma.user.findFirst({
+            where: { storeId: DEFAULT_STORE_ID, email: identifier },
+          });
+          if (!user) return null;
+          if (!user.emailVerified) {
+            await prisma.user.update({
+              where: { id: user.id },
+              data: { emailVerified: true },
+            });
+          }
+          return sessionUser(user);
+        }
+
+        if (password) {
+          const kitchenUser = await loginKitchenAdmin(identifier, password);
+          if (kitchenUser) return sessionUser(kitchenUser);
+        }
+
         const user = await prisma.user.findFirst({
           where: {
             storeId: DEFAULT_STORE_ID,
@@ -45,15 +94,7 @@ export const authOptions: NextAuthOptions = {
         if (!user) return null;
         const ok = await bcrypt.compare(password, user.passwordHash);
         if (!ok) return null;
-
-        return {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          phone: user.phone,
-          role: user.role as "customer" | "admin",
-          storeId: DEFAULT_STORE_ID,
-        };
+        return sessionUser(user);
       },
     }),
   ],
@@ -61,39 +102,52 @@ export const authOptions: NextAuthOptions = {
     async signIn({ user, account }) {
       if (account?.provider !== "google" || !user.email) return true;
 
-      const existing = await prisma.user.findUnique({ where: { email: user.email } });
+      const email = user.email.toLowerCase();
+      const isKitchen = kitchenAdminEmail() === email;
+      const existing = await prisma.user.findUnique({ where: { email } });
       if (!existing) {
         await ensureDefaultStore();
         await prisma.user.create({
           data: {
             name: user.name || "Wokora Guest",
-            email: user.email,
+            email,
             phone: `g${String(user.id || Date.now()).replace(/\D/g, "").slice(-10).padStart(10, "0")}`,
             passwordHash: await bcrypt.hash(crypto.randomUUID(), 10),
-            role: "customer",
+            role: isKitchen ? "admin" : "customer",
+            emailVerified: true,
             storeId: DEFAULT_STORE_ID,
+          },
+        });
+      } else {
+        await prisma.user.update({
+          where: { id: existing.id },
+          data: {
+            emailVerified: true,
+            ...(isKitchen ? { role: "admin" as const } : {}),
           },
         });
       }
       return true;
     },
     async jwt({ token, user }) {
-      if (user?.id) {
+      const email = (user?.email || token.email || "").toString().toLowerCase();
+      const dbUser = email
+        ? await prisma.user.findUnique({ where: { email } })
+        : token.id
+          ? await prisma.user.findUnique({ where: { id: String(token.id) } })
+          : null;
+
+      if (dbUser) {
+        token.id = dbUser.id;
+        token.phone = dbUser.phone;
+        token.role = dbUser.role as "customer" | "admin";
+        token.email = dbUser.email || token.email;
+      } else if (user?.id) {
         token.id = user.id;
         token.phone = user.phone || "";
         token.role = (user.role as "customer" | "admin") || "customer";
-        token.storeId = DEFAULT_STORE_ID;
-      } else if (token.email) {
-        const dbUser = await prisma.user.findUnique({ where: { email: token.email } });
-        if (dbUser) {
-          token.id = dbUser.id;
-          token.phone = dbUser.phone;
-          token.role = dbUser.role as "customer" | "admin";
-        }
-        token.storeId = DEFAULT_STORE_ID;
-      } else {
-        token.storeId = DEFAULT_STORE_ID;
       }
+      token.storeId = DEFAULT_STORE_ID;
       return token;
     },
     async session({ session, token }) {

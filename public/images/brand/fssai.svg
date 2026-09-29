@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 100">
+  <rect x="6" y="24" width="248" height="5" rx="1" fill="#E87722"/>
+  <path fill="#3BAF2A" d="M262 8c16 8 26 24 16 38-10-2-18-2-26 2 6-12 8-26 10-40Z"/>
+  <circle cx="252" cy="28" r="4.5" fill="#6B3D1A"/>
+  <text x="8" y="74" font-family="Georgia, 'Palatino Linotype', 'Times New Roman', serif" font-style="italic" font-weight="700" font-size="58" letter-spacing="-1.5">
+    <tspan fill="#2E3192">fssa</tspan><tspan fill="#E87722">i</tspan>
+  </text>
+  <rect x="6" y="86" width="248" height="5" rx="1" fill="#3BAF2A"/>
+</svg>

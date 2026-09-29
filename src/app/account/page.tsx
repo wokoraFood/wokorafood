@@ -3,24 +3,22 @@
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Search } from "lucide-react";
 import type { DietPreference } from "@/components/menu/DietToggle";
 import { DietGate } from "@/components/order/DietGate";
 import { DietIcons } from "@/components/order/DietIcons";
-import { OrderItemRow } from "@/components/order/OrderItemRow";
-import { CATEGORY_META, displayOrderNumber, formatINR } from "@/lib/constants";
-import { ALLOWED_CATEGORY_SLUGS } from "@/data/menu";
+import { ExploreMenu } from "@/components/menu/ExploreMenu";
+import { OrderBill, type BillOrder } from "@/components/account/OrderBill";
+import { displayOrderNumber, formatINR } from "@/lib/constants";
 import { useCartStore } from "@/store/cartStore";
 import { uniqueByName } from "@/lib/uniqueByName";
 import type { FoodCardItem } from "@/components/menu/CustomizeItemPanel";
 
-type Order = {
-  id: string;
-  serialNumber: number;
-  createdAt: string;
-  totalAmount: number;
-  status: string;
-  items: { quantity: number; menuItem: { id: string; name: string; price: number; imageUrl: string; isVeg: boolean } }[];
+type Order = BillOrder & {
+  items: {
+    quantity: number;
+    customization?: string;
+    menuItem: { id: string; name: string; price: number; imageUrl: string; isVeg: boolean };
+  }[];
 };
 
 type Account = {
@@ -30,6 +28,7 @@ type Account = {
   loyaltyPoints: number;
   dietPreference: DietPreference;
   orders: Order[];
+  lastDelivered: Order | null;
 };
 
 type MenuItem = FoodCardItem & {
@@ -37,7 +36,7 @@ type MenuItem = FoodCardItem & {
   isFeatured?: boolean;
 };
 
-type Category = { id: string; name: string; slug: string };
+type Category = { id: string; name: string; slug: string; iconUrl?: string | null };
 
 export default function OrderHomePage() {
   const router = useRouter();
@@ -75,7 +74,7 @@ export default function OrderHomePage() {
       .then((res) => res.json())
       .then((data) => {
         setItems(data.items || []);
-        setCategories((data.categories || []).filter((row: Category) => ALLOWED_CATEGORY_SLUGS.includes(row.slug)));
+        setCategories(data.categories || []);
       })
       .catch(() => {
         setItems([]);
@@ -96,15 +95,14 @@ export default function OrderHomePage() {
   const filtered = useMemo(() => {
     const rows = items.filter((item) => {
       const matchesDiet = diet === "all" || (diet === "veg" ? item.isVeg : !item.isVeg);
-      const matchesCategory = active === "all" || item.category.slug === active;
       const matchesQuery =
         !query ||
         item.name.toLowerCase().includes(query.toLowerCase()) ||
         item.description.toLowerCase().includes(query.toLowerCase());
-      return matchesDiet && matchesCategory && matchesQuery;
+      return matchesDiet && matchesQuery;
     });
     return uniqueByName(rows);
-  }, [items, diet, active, query]);
+  }, [items, diet, query]);
 
   const deals = useMemo(
     () =>
@@ -116,23 +114,30 @@ export default function OrderHomePage() {
     [items, diet]
   );
 
-  const grouped = useMemo(() => {
-    const map = new Map<string, MenuItem[]>();
-    filtered.forEach((item) => {
-      const key = item.category.slug;
-      map.set(key, [...(map.get(key) || []), item]);
-    });
-    return categories.filter((category) => map.has(category.slug)).map((category) => ({
-      category,
-      items: map.get(category.slug) || [],
-    }));
-  }, [filtered, categories]);
-
   if (!user) return <div className="py-24 text-center text-brand-cream/60">Loading the kitchen...</div>;
 
   const firstName = user.name.split(" ")[0];
-  const lastOrder = user.orders[0];
-  const categoryMeta = (slug: string) => CATEGORY_META.find((row) => row.slug === slug);
+  const lastDelivered = user.lastDelivered;
+  const latestUnpaid = user.orders.find(
+    (order) => order.paymentStatus === "failed" || order.paymentStatus === "pending"
+  );
+
+  const reorder = (order: Order) => {
+    order.items.forEach((item) => {
+      if (!item.menuItem.id) return;
+      addItem(
+        {
+          id: item.menuItem.id,
+          name: item.menuItem.name,
+          price: item.menuItem.price || 0,
+          imageUrl: item.menuItem.imageUrl || "/images/menu/placeholder.png",
+          isVeg: item.menuItem.isVeg ?? true,
+        },
+        item.quantity
+      );
+    });
+    router.push("/cart");
+  };
 
   if (gateOpen) {
     return <DietGate name={firstName} onPick={saveDiet} />;
@@ -172,38 +177,30 @@ export default function OrderHomePage() {
       </div>
 
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
-        {lastOrder && (
+        {latestUnpaid ? (
+          <div className="mt-5">
+            <OrderBill order={latestUnpaid} compact onReorder={() => reorder(latestUnpaid)} />
+          </div>
+        ) : null}
+
+        {lastDelivered ? (
           <button
             type="button"
-            onClick={() => {
-              lastOrder.items.forEach((item) =>
-                addItem(
-                  {
-                    id: item.menuItem.id,
-                    name: item.menuItem.name,
-                    price: item.menuItem.price,
-                    imageUrl: item.menuItem.imageUrl,
-                    isVeg: item.menuItem.isVeg,
-                  },
-                  item.quantity
-                )
-              );
-              router.push("/cart");
-            }}
+            onClick={() => reorder(lastDelivered)}
             className="mt-5 flex w-full flex-col gap-2 rounded-2xl border border-brand-gold/30 bg-brand-gold/10 px-4 py-3 text-left sm:flex-row sm:items-center sm:justify-between"
           >
             <span>
-              <span className="block text-xs uppercase tracking-widest text-brand-gold">Repeat last order</span>
+              <span className="block text-xs uppercase tracking-widest text-brand-gold">Last delivered</span>
               <span className="text-sm text-brand-cream/80">
-                {displayOrderNumber(lastOrder.serialNumber)} ·{" "}
+                {displayOrderNumber(lastDelivered.serialNumber)} ·{" "}
                 <span className="line-clamp-2 sm:line-clamp-1">
-                  {lastOrder.items.map((item) => item.menuItem.name).join(", ")}
+                  {lastDelivered.items.map((item) => item.menuItem.name).join(", ")}
                 </span>
               </span>
             </span>
-            <span className="font-display text-brand-gold">{formatINR(lastOrder.totalAmount)}</span>
+            <span className="font-display text-brand-gold">{formatINR(lastDelivered.totalAmount)}</span>
           </button>
-        )}
+        ) : null}
 
         {deals.length > 0 && (
           <section className="mt-8">
@@ -240,74 +237,15 @@ export default function OrderHomePage() {
           </section>
         )}
 
-        <section className="mt-10">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-            <h2 className="font-display text-2xl font-bold">Explore Menu</h2>
-            <div className="relative w-full sm:w-56">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-brand-cream/45" />
-              <input
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                placeholder="Search"
-                className="w-full rounded-full border border-white/10 bg-white/5 py-2 pl-9 pr-3 text-sm outline-none focus:border-brand-red"
-              />
-            </div>
-          </div>
-          <div className="no-scrollbar mt-5 flex gap-5 overflow-x-auto pb-3">
-            <button type="button" onClick={() => setActive("all")} className="w-[76px] shrink-0 text-center">
-              <span
-                className={`mx-auto grid h-[76px] w-[76px] place-items-center rounded-full border-2 text-xs font-semibold ${
-                  active === "all" ? "border-brand-red bg-brand-red/20" : "border-white/15 bg-white/5"
-                }`}
-              >
-                All
-              </span>
-              <span className="mt-2 block text-xs text-brand-cream/70">All</span>
-            </button>
-            {categories.map((category) => {
-              const meta = categoryMeta(category.slug);
-              const selected = active === category.slug;
-              return (
-                <button
-                  key={category.slug}
-                  type="button"
-                  onClick={() => setActive(category.slug)}
-                  className="w-[76px] shrink-0 text-center"
-                >
-                  <span
-                    className={`relative mx-auto block h-[76px] w-[76px] overflow-hidden rounded-full border-2 ${
-                      selected ? "border-brand-red shadow-[0_0_18px_rgba(232,39,44,0.45)]" : "border-white/15"
-                    }`}
-                  >
-                    {meta?.image ? (
-                      <Image src={meta.image} alt="" fill className="object-cover" sizes="76px" unoptimized />
-                    ) : (
-                      <span className="grid h-full place-items-center text-[10px]">{category.name}</span>
-                    )}
-                  </span>
-                  <span className={`mt-2 block truncate text-xs ${selected ? "text-brand-gold" : "text-brand-cream/70"}`}>
-                    {category.name}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </section>
-
-        <div className="mt-8 space-y-10">
-          {grouped.map(({ category, items: sectionItems }) => (
-            <section key={category.slug} id={category.slug}>
-              <h3 className="font-display text-2xl font-bold">{category.name}</h3>
-              <div className="mt-2 divide-y divide-white/10 rounded-3xl border border-white/10 bg-charcoal/60 px-4">
-                {sectionItems.map((item) => (
-                  <OrderItemRow key={item.id} item={item} />
-                ))}
-              </div>
-            </section>
-          ))}
-          {grouped.length === 0 && (
-            <p className="py-16 text-center text-brand-cream/55">Nothing in this filter. Switch veg / non-veg and try again.</p>
-          )}
+        <div className="mt-10">
+          <ExploreMenu
+            items={filtered}
+            categories={categories}
+            query={query}
+            onQuery={setQuery}
+            active={active}
+            onActive={setActive}
+          />
         </div>
       </div>
     </div>

@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
 import { cacheDel, menuCacheKey } from "@/lib/cache/menu";
 import { DEFAULT_STORE_ID } from "@/lib/store";
+import { serverErrorJson } from "@/lib/publicError";
 
 async function assertAdmin() {
   const session = await getServerSession(authOptions);
@@ -18,6 +19,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
   if (denied) return denied;
 
   const body = await request.json();
+  try {
   const item = await prisma.menuItem.update({
     where: { id: params.id },
     data: {
@@ -35,13 +37,22 @@ export async function PATCH(request: Request, { params }: { params: { id: string
 
   await cacheDel(menuCacheKey(DEFAULT_STORE_ID));
   return NextResponse.json({ item });
+  } catch (error) {
+    console.error("[menu PATCH]", error);
+    return serverErrorJson();
+  }
 }
 
 export async function DELETE(_request: Request, { params }: { params: { id: string } }) {
   const denied = await assertAdmin();
   if (denied) return denied;
 
+  try {
   await prisma.menuItem.delete({ where: { id: params.id } });
   await cacheDel(menuCacheKey(DEFAULT_STORE_ID));
   return NextResponse.json({ ok: true });
+  } catch (error) {
+    console.error("[menu DELETE]", error);
+    return serverErrorJson();
+  }
 }

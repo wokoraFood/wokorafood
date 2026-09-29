@@ -8,7 +8,7 @@ import { useCartAccess } from "@/hooks/useCartAccess";
 
 const TABS = [
   { href: "/account", label: "Order", icon: UtensilsCrossed },
-  { href: "/account/orders", label: "Orders", icon: ShoppingBag },
+  { href: "/account/orders", label: "Bills", icon: ShoppingBag },
   { href: "/account/settings", label: "Settings", icon: Settings },
   { href: "/account/support", label: "Support", icon: Headphones },
 ];

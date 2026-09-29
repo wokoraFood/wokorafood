@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
+import { notifyNewSupportTicket } from "@/lib/supportNotify";
 
 export async function GET() {
   try {
@@ -37,6 +38,9 @@ export async function POST(request: Request) {
     if (!subject || !message || !name) {
       return NextResponse.json({ error: "Name, subject and message are required" }, { status: 400 });
     }
+    if (!email) {
+      return NextResponse.json({ error: "Email is required so we can send you a confirmation" }, { status: 400 });
+    }
 
     const ticket = await prisma.supportTicket.create({
       data: {
@@ -51,9 +55,17 @@ export async function POST(request: Request) {
       include: { replies: true },
     });
 
+    await notifyNewSupportTicket({
+      name,
+      phone,
+      email: email || null,
+      subject,
+      message,
+    });
+
     return NextResponse.json({ ok: true, ticket });
   } catch (error) {
     console.error("[support POST]", error);
-    return NextResponse.json({ error: "Support is warming up. Try again in a moment." }, { status: 500 });
+    return NextResponse.json({ error: "Server Error" }, { status: 500 });
   }
 }

@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
 import { attachItemCustomizations } from "@/lib/cartPersistence";
+import { ensureOrderPayment, hidePayoutFields } from "@/lib/payments";
 
 export async function GET() {
   const session = await getServerSession(authOptions);
@@ -22,15 +23,34 @@ export async function GET() {
       themePreference: true,
       addresses: true,
       orders: {
-        include: { items: { include: { menuItem: true } } },
+        include: {
+          items: { include: { menuItem: true } },
+          payments: { orderBy: { createdAt: "desc" } },
+        },
         orderBy: { createdAt: "desc" },
-        take: 20,
+        take: 50,
       },
     },
   });
 
+  if (user?.orders.length) {
+    await Promise.all(user.orders.map((order) => ensureOrderPayment(order)));
+    user.orders = await prisma.order.findMany({
+      where: { userId: user.id },
+      include: {
+        items: { include: { menuItem: true } },
+        payments: { orderBy: { createdAt: "desc" } },
+      },
+      orderBy: { createdAt: "desc" },
+      take: 50,
+    });
+  }
+
+  const orders = user ? (await attachItemCustomizations(user.orders)).map(hidePayoutFields) : [];
+  const lastDelivered = orders.find((order) => order.status === "served") || null;
+
   return NextResponse.json({
-    user: user ? { ...user, orders: await attachItemCustomizations(user.orders) } : user,
+    user: user ? { ...user, orders, lastDelivered } : user,
   });
 }
 

@@ -27,6 +27,7 @@ export function UserSpaceSync() {
 
     const boot = async () => {
       skipSave.current = true;
+      try {
       const guestItems = userId ? peekPersistedCart("guest") : [];
       setCartOwner(userId);
       await useCartStore.persist.rehydrate();
@@ -68,6 +69,9 @@ export function UserSpaceSync() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ items: next }),
         });
+      }
+      } catch {
+        // Ignore network blips while the dev server restarts.
       }
       skipSave.current = false;
     };

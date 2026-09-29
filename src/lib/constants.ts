@@ -1,3 +1,9 @@
+export const SITE_URL = "https://wokorafoods.com";
+
+export function getSiteUrl() {
+  return (process.env.NEXTAUTH_URL || SITE_URL).replace(/\/$/, "");
+}
+
 export const BRAND = {
   name: "Wokora Foods",
   wordmark: "Wokora Foods",
@@ -17,10 +23,19 @@ export const BRAND = {
     facebook: "https://facebook.com/wokorafoods",
     twitter: "https://x.com/wokorafoods",
   },
+  fssai: {
+    label: "FSSAI",
+    number: "22726105002204",
+  },
 };
 
 export function googleMapsEmbed(address: string) {
-  return `https://maps.google.com/maps?q=${encodeURIComponent(address)}&hl=en&z=16&output=embed`;
+  const q = encodeURIComponent(address);
+  return `https://www.google.com/maps?q=${q}&hl=en&z=16&output=embed`;
+}
+
+export function googleMapsLink(address: string) {
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
 }
 
 export function brandWhatsApp() {

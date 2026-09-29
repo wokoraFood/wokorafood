@@ -8,6 +8,7 @@ import { QuantityStepper } from "@/components/ui/QuantityStepper";
 import { GST_RATE, TABLE_COUNT, formatINR } from "@/lib/constants";
 import { cartSubtotal, useCartStore } from "@/store/cartStore";
 import { useCartAccess } from "@/hooks/useCartAccess";
+import { userFacingError } from "@/lib/publicError";
 
 export default function CartPage() {
   const router = useRouter();
@@ -38,30 +39,35 @@ export default function CartPage() {
     }
     setLoading(true);
     setError("");
-    const res = await fetch("/api/orders", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        type: orderType,
-        tableNumber,
-        notes,
-        paymentMethod,
-        items: items.map((item) => ({
-          menuItemId: item.menuItemId || item.id.split("::")[0],
-          quantity: item.quantity,
-          selections: item.selections,
-          customization: item.customization,
-        })),
-      }),
-    });
-    const data = await res.json();
-    setLoading(false);
-    if (!res.ok) {
-      setError(typeof data.error === "string" ? data.error : "Could not place the order. Please sign in first.");
-      return;
+    try {
+      const res = await fetch("/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: orderType,
+          tableNumber,
+          notes,
+          paymentMethod,
+          items: items.map((item) => ({
+            menuItemId: item.menuItemId || item.id.split("::")[0],
+            quantity: item.quantity,
+            selections: item.selections,
+            customization: item.customization,
+          })),
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(userFacingError(typeof data.error === "string" ? data.error : "Could not place the order. Please sign in first."));
+        return;
+      }
+      clear();
+      router.push(paymentMethod === "cash" ? `/order/${data.order.id}` : `/pay/${data.order.id}`);
+    } catch {
+      setError(userFacingError("Network error. Check the connection and try again."));
+    } finally {
+      setLoading(false);
     }
-    clear();
-    router.push(paymentMethod === "cash" ? `/order/${data.order.id}` : `/pay/${data.order.id}`);
   };
 
   if (status === "loading") {
@@ -167,7 +173,7 @@ export default function CartPage() {
           <p className="text-sm">Payment</p>
           <div className="mt-2 grid grid-cols-3 gap-2 text-sm">
             {([
-              ["upi", "UPI"],
+              ["upi", "UPI apps"],
               ["card", "Card"],
               ["cash", "Cash"],
             ] as const).map(([value, label]) => (
@@ -181,6 +187,11 @@ export default function CartPage() {
               </button>
             ))}
           </div>
+          {paymentMethod === "upi" ? (
+            <p className="mt-2 text-xs text-brand-cream/50">
+              Next screen opens GPay, PhonePe, Paytm, BHIM, and every other UPI app on the phone.
+            </p>
+          ) : null}
         </div>
         <textarea
           value={notes}

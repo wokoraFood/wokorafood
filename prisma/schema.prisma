@@ -4,8 +4,7 @@ generator client {
 }
 
 datasource db {
-  // Local: SQLite on laptop and Hostinger VPS. Switch to postgresql if you install Postgres on the box.
-  provider = "sqlite"
+  provider = "mysql"
   url      = env("DATABASE_URL")
 }
 
@@ -33,11 +32,13 @@ model User {
   role            String         @default("customer")
   loyaltyPoints   Int            @default(0)
   phoneVerified   Boolean        @default(false)
+  emailVerified   Boolean        @default(false)
   dietPreference  String         @default("all")
   themePreference String         @default("dark")
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
   orders          Order[]
+  payments        Payment[]
   addresses       Address[]
   notifications   Notification[]
   cartLines       CartLine[]
@@ -134,6 +135,7 @@ model Order {
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
   items          OrderItem[]
+  payments       Payment[]
   printJobs      PrintJob[]
 
   @@unique([storeId, serialNumber])
@@ -142,6 +144,29 @@ model Order {
   @@index([storeId, status])
   @@index([storeId, userId])
   @@index([storeId, createdAt])
+}
+
+model Payment {
+  id            String    @id @default(cuid())
+  storeId       String    @default("wokora")
+  orderId       String
+  order         Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  method        String
+  status        String
+  amount        Float
+  upiVpa        String    @default("")
+  upiApp        String    @default("")
+  txnRef        String    @default("")
+  failureReason String    @default("")
+  paidAt        DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([orderId])
+  @@index([userId, createdAt])
+  @@index([storeId, status])
 }
 
 model Notification {
@@ -213,6 +238,25 @@ model SupportReply {
   createdAt  DateTime      @default(now())
 }
 
+model EmailOtp {
+  id        String   @id @default(cuid())
+  email     String
+  codeHash  String
+  purpose   String   @default("signup")
+  expiresAt DateTime
+  consumed  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([email, purpose])
+}
+
+model MediaFile {
+  id        String   @id @default(cuid())
+  mime      String   @default("image/jpeg")
+  data      Bytes
+  createdAt DateTime @default(now())
+}
+
 model CafeSettings {
   id      String @id @default("cafe")
   name    String @default("Wokora Foods")
@@ -220,4 +264,5 @@ model CafeSettings {
   email   String @default("wokorafoods@gmail.com")
   address String @default("Shop No. 23, LGF, Siddharth Vihar, Opus Plot, Yojna, Ghaziabad, UP 201009")
   hours   String @default("11:00 AM – 11:00 PM")
+  upiVpa  String @default("")
 }

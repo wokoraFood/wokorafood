@@ -5,8 +5,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { FormEvent, useState, Suspense } from "react";
 import { getSession, signIn } from "next-auth/react";
 import { Logo } from "@/components/ui/Logo";
-
-const googleEnabled = Boolean(process.env.NEXT_PUBLIC_GOOGLE_AUTH);
+import { GoogleAuthButton } from "@/components/auth/GoogleAuthButton";
+import { userFacingError } from "@/lib/publicError";
 
 function LoginForm() {
   const router = useRouter();
@@ -14,22 +14,54 @@ function LoginForm() {
   const callbackUrl = params.get("callbackUrl") || "/account";
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
+  const [otp, setOtp] = useState("");
+  const [useOtp, setUseOtp] = useState(false);
+  const [otpHint, setOtpHint] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const sendOtp = async () => {
+    setError("");
+    setOtpHint("");
+    const email = identifier.trim();
+    if (!email.includes("@")) {
+      setError("Enter your email to receive an OTP.");
+      return;
+    }
+    const res = await fetch("/api/otp/send", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, purpose: "login" }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      setError(userFacingError(data.error || "Server Error"));
+      return;
+    }
+    setOtpHint("OTP sent to your email.");
+  };
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
     setLoading(true);
     setError("");
-    const result = await signIn("credentials", {
+    const payload: Record<string, string> = {
       identifier: identifier.trim(),
-      password,
-      redirect: false,
       callbackUrl,
+    };
+    if (useOtp) payload.otp = otp;
+    else payload.password = password;
+    const result = await signIn("credentials", {
+      ...payload,
+      redirect: false,
     });
     setLoading(false);
     if (!result || result.error) {
-      setError("Incorrect phone, email, or password. Create an account if you are new here.");
+      setError(
+        useOtp
+          ? "Incorrect email or OTP. Request a new code if it expired."
+          : "Incorrect phone, email, or password. Create an account if you are new here."
+      );
       return;
     }
     const session = await getSession();
@@ -57,7 +89,7 @@ function LoginForm() {
           <Logo />
           <h1 className="mt-8 font-display text-3xl font-bold">Login</h1>
           <p className="mt-2 text-sm text-brand-cream/60">
-            Sign in with your phone number and password. An account is required to place an order.
+            Sign in with Google, your password, or an OTP sent to your email.
           </p>
           <form onSubmit={submit} className="mt-8 space-y-4">
             <input
@@ -65,62 +97,58 @@ function LoginForm() {
               autoComplete="username"
               value={identifier}
               onChange={(event) => setIdentifier(event.target.value)}
-              placeholder="Phone number or email"
+              placeholder={useOtp ? "Email" : "Phone number or email"}
               className="w-full rounded-full border border-white/10 bg-white/5 px-4 py-3 outline-none focus:border-brand-red"
             />
-            <input
-              required
-              type="password"
-              autoComplete="current-password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              placeholder="Password"
-              className="w-full rounded-full border border-white/10 bg-white/5 px-4 py-3 outline-none focus:border-brand-red"
-            />
+            {useOtp ? (
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <input
+                  required
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  value={otp}
+                  onChange={(event) => setOtp(event.target.value)}
+                  placeholder="Email OTP"
+                  className="w-full rounded-full border border-white/10 bg-white/5 px-4 py-3 outline-none focus:border-brand-red"
+                />
+                <button type="button" onClick={sendOtp} className="rounded-full border border-white/15 px-4 py-3 text-sm sm:py-0">
+                  Send OTP
+                </button>
+              </div>
+            ) : (
+              <input
+                required
+                type="password"
+                autoComplete="current-password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                placeholder="Password"
+                className="w-full rounded-full border border-white/10 bg-white/5 px-4 py-3 outline-none focus:border-brand-red"
+              />
+            )}
+            {otpHint && <p className="text-xs text-brand-gold">{otpHint}</p>}
             {error && <p className="text-sm text-brand-red">{error}</p>}
             <button disabled={loading} className="btn-glow w-full py-3">
               {loading ? "Signing in..." : "Login"}
             </button>
           </form>
-          {googleEnabled && (
-            <button
-              type="button"
-              onClick={() => signIn("google", { callbackUrl })}
-              className="mt-3 w-full rounded-full border border-white/15 py-3 text-sm"
-            >
-              Continue with Google
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={() => {
+              setUseOtp((value) => !value);
+              setError("");
+              setOtpHint("");
+            }}
+            className="mt-3 w-full text-sm text-brand-gold"
+          >
+            {useOtp ? "Use password instead" : "Use email OTP instead"}
+          </button>
+          <GoogleAuthButton callbackUrl={callbackUrl} />
           <div className="mt-4 flex flex-col gap-2 text-sm text-brand-cream/70 sm:flex-row sm:justify-between">
             <Link href="/forgot-password">Forgot password</Link>
             <Link href="/signup" className="text-brand-gold">
               Create New Account
             </Link>
-          </div>
-          <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-4 text-xs text-brand-cream/70">
-            <p className="mb-2 font-semibold text-brand-cream">Demo login — one tap</p>
-            <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                className="rounded-full border border-white/15 px-3 py-1.5"
-                onClick={() => {
-                  setIdentifier("9876543210");
-                  setPassword("Taste@1234");
-                }}
-              >
-                Customer
-              </button>
-              <button
-                type="button"
-                className="rounded-full border border-white/15 px-3 py-1.5"
-                onClick={() => {
-                  setIdentifier("9999999999");
-                  setPassword("Admin@1234");
-                }}
-              >
-                Kitchen / Admin
-              </button>
-            </div>
           </div>
         </div>
       </div>

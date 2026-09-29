@@ -2,10 +2,19 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
-import { printReceipt } from "@/lib/printReceipt";
-import { afterOrderUpdated, type OrderUpdatedEvent } from "@/lib/orderEvents";
+import { buildReceiptHtml, printReceipt } from "@/lib/printReceipt";
+import { afterOrderUpdated, afterPaymentChanged, type OrderUpdatedEvent } from "@/lib/orderEvents";
 import { DEFAULT_STORE_ID } from "@/lib/store";
 import { attachItemCustomizations } from "@/lib/cartPersistence";
+import { recordPayment, hidePayoutFields, type PaymentStatus } from "@/lib/payments";
+import {
+  assertSameOrigin,
+  paymentToken,
+  rateLimit,
+  safePayMethod,
+  safePayStatus,
+  verifyPaymentToken,
+} from "@/lib/security";
 
 const STATUSES = new Set(["placed", "preparing", "ready", "served", "cancelled"]);
 
@@ -19,6 +28,7 @@ export async function GET(_request: Request, { params }: { params: { id: string 
     where: { id: params.id },
     include: {
       items: { include: { menuItem: true } },
+      payments: { orderBy: { createdAt: "desc" } },
       user: { select: { name: true, phone: true, email: true } },
     },
   });
@@ -34,7 +44,10 @@ export async function GET(_request: Request, { params }: { params: { id: string 
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  return NextResponse.json({ order: (await attachItemCustomizations([order]))[0] });
+  return NextResponse.json({
+    order: hidePayoutFields((await attachItemCustomizations([order]))[0]),
+    payToken: paymentToken(order.id, order.userId),
+  });
 }
 
 export async function PATCH(request: Request, { params }: { params: { id: string } }) {
@@ -43,29 +56,91 @@ export async function PATCH(request: Request, { params }: { params: { id: string
     return NextResponse.json({ error: "Login required" }, { status: 401 });
   }
 
-  const body = await request.json();
+  const originBlock = assertSameOrigin(request);
+  if (originBlock) return originBlock;
+
+  let body: Record<string, unknown>;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid request" }, { status: 400 });
+  }
+
   const existing = await prisma.order.findUnique({
     where: { id: params.id },
     include: { user: { select: { name: true, phone: true, email: true } } },
   });
   if (!existing) return NextResponse.json({ error: "Order not found" }, { status: 404 });
 
-  if (body.pay) {
+  if (body.pay === true || body.pay === false) {
+    const limited = rateLimit(`pay:${session.user.id}:${existing.id}`, 8, 10 * 60 * 1000);
+    if (limited) return limited;
     if (session.user.role !== "admin" && existing.userId !== session.user.id) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
+    if (session.user.role !== "admin" && !verifyPaymentToken(existing.id, existing.userId, typeof body.payToken === "string" ? body.payToken : "")) {
+      return NextResponse.json({ error: "Invalid payment token" }, { status: 403 });
+    }
+    if (existing.status === "cancelled") {
+      return NextResponse.json({ error: "Order cancelled" }, { status: 409 });
+    }
+    if (existing.paymentStatus === "paid") {
+      const current = await prisma.order.findUnique({
+        where: { id: existing.id },
+        include: {
+          items: { include: { menuItem: true } },
+          payments: { orderBy: { createdAt: "desc" } },
+          user: { select: { name: true, phone: true, email: true } },
+        },
+      });
+      if (!current) return NextResponse.json({ error: "Order not found" }, { status: 404 });
+      return NextResponse.json({ order: hidePayoutFields(current) });
+    }
+    const method = safePayMethod(body.paymentMethod, existing.paymentMethod || "upi");
+    const paymentStatus: PaymentStatus = body.pay ? "paid" : "failed";
     const order = await prisma.order.update({
       where: { id: params.id },
       data: {
-        paymentStatus: "paid",
-        paymentMethod: body.paymentMethod || existing.paymentMethod || "upi",
+        paymentStatus,
+        paymentMethod: method,
       },
       include: {
         items: { include: { menuItem: true } },
+        payments: { orderBy: { createdAt: "desc" } },
         user: { select: { name: true, phone: true, email: true } },
       },
     });
-    return NextResponse.json({ order });
+    await recordPayment({
+      storeId: existing.storeId,
+      orderId: existing.id,
+      userId: existing.userId,
+      method,
+      status: paymentStatus,
+      amount: existing.totalAmount,
+      upiApp: typeof body.upiApp === "string" ? body.upiApp.slice(0, 32) : "",
+      txnRef: existing.id,
+      failureReason: body.pay
+        ? ""
+        : typeof body.failureReason === "string"
+          ? body.failureReason.slice(0, 180)
+          : "Payment failed in UPI app",
+    });
+    const withPay = await prisma.order.findUnique({
+      where: { id: order.id },
+      include: {
+        items: { include: { menuItem: true } },
+        payments: { orderBy: { createdAt: "desc" } },
+        user: { select: { name: true, phone: true, email: true } },
+      },
+    });
+    await afterPaymentChanged({
+      storeId: existing.storeId,
+      orderId: existing.id,
+      serialNumber: existing.serialNumber,
+      paymentStatus,
+      totalAmount: existing.totalAmount,
+    });
+    return NextResponse.json({ order: hidePayoutFields(withPay || order) });
   }
 
   if (session.user.role !== "admin") {
@@ -80,7 +155,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
       })
     );
     const withNotes = (await attachItemCustomizations([{ items: printItems }]))[0];
-    await printReceipt({
+    const printable = {
       id: existing.id,
       tableNumber: existing.tableNumber,
       type: existing.type as "dine_in" | "takeaway",
@@ -96,8 +171,9 @@ export async function PATCH(request: Request, { params }: { params: { id: string
       createdAt: existing.createdAt,
       customerName: existing.user.name,
       customerPhone: existing.user.phone,
-    });
-    return NextResponse.json({ ok: true });
+    };
+    await printReceipt(printable);
+    return NextResponse.json({ ok: true, html: buildReceiptHtml(printable) });
   }
 
   const data: {
@@ -107,7 +183,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
     paymentStatus?: string;
   } = {};
 
-  if (body.status && STATUSES.has(body.status)) {
+  if (typeof body.status === "string" && STATUSES.has(body.status)) {
     data.status = body.status;
   }
 
@@ -121,8 +197,9 @@ export async function PATCH(request: Request, { params }: { params: { id: string
     if (!body.status) data.status = "preparing";
   }
 
-  if (body.paymentStatus) {
-    data.paymentStatus = body.paymentStatus;
+  const payStatus = safePayStatus(body.paymentStatus);
+  if (payStatus) {
+    data.paymentStatus = payStatus;
   }
 
   const order = await prisma.order.update({
@@ -130,9 +207,28 @@ export async function PATCH(request: Request, { params }: { params: { id: string
     data,
     include: {
       items: { include: { menuItem: true } },
+      payments: { orderBy: { createdAt: "desc" } },
       user: { select: { name: true, phone: true, email: true } },
     },
   });
+
+  if (payStatus) {
+    await recordPayment({
+      storeId: order.storeId,
+      orderId: order.id,
+      userId: order.userId,
+      method: order.paymentMethod || "cash",
+      status: payStatus as PaymentStatus,
+      amount: order.totalAmount,
+    });
+    await afterPaymentChanged({
+      storeId: order.storeId,
+      orderId: order.id,
+      serialNumber: order.serialNumber,
+      paymentStatus: payStatus,
+      totalAmount: order.totalAmount,
+    });
+  }
 
   const updated: OrderUpdatedEvent = {
     type: "OrderUpdated",

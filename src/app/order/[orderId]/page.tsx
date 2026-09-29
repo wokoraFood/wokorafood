@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { Check } from "lucide-react";
 import { brandWhatsApp, displayOrderNumber, formatINR } from "@/lib/constants";
+import { paymentMethodLabel, paymentStatusLabel } from "@/lib/orderLabels";
 
 const STEPS = ["placed", "preparing", "ready", "served"] as const;
 
@@ -27,21 +28,33 @@ type Order = {
 export default function OrderPage() {
   const params = useParams<{ orderId: string }>();
   const [order, setOrder] = useState<Order | null>(null);
+  const [missing, setMissing] = useState(false);
 
   useEffect(() => {
     const load = () =>
       fetch(`/api/orders/${params.orderId}`)
         .then((res) => res.json())
-        .then((data) => setOrder(data.order))
-        .catch(() => setOrder(null));
+        .then((data) => {
+          if (data?.order) {
+            setOrder(data.order);
+            setMissing(false);
+            return;
+          }
+          setMissing(true);
+        })
+        .catch(() => setMissing(true));
 
     load();
     const timer = setInterval(load, 5000);
     return () => clearInterval(timer);
   }, [params.orderId]);
 
-  if (!order) {
+  if (!order && !missing) {
     return <div className="px-4 py-20 text-center text-brand-cream/60">Loading your order...</div>;
+  }
+
+  if (!order) {
+    return <div className="px-4 py-20 text-center text-brand-cream/60">Order not found.</div>;
   }
 
   const stepIndex = Math.max(0, STEPS.indexOf(order.status as (typeof STEPS)[number]));
@@ -67,15 +80,17 @@ export default function OrderPage() {
           : "You will be notified as soon as the kitchen sets a wait time"}
       </p>
       <p className="mt-1 text-center text-xs uppercase tracking-wide text-brand-cream/50">
-        Payment: {order.paymentStatus.replace(/_/g, " ")}
-        {order.paymentMethod ? ` · ${order.paymentMethod}` : ""}
+        Payment: {paymentStatusLabel(order.paymentStatus)}
+        {order.paymentMethod ? ` · ${paymentMethodLabel(order.paymentMethod)}` : ""}
       </p>
 
       <div className="mt-8 flex justify-between">
         {STEPS.map((step, index) => (
           <div key={step} className="flex flex-1 flex-col items-center">
             <div className={`h-3 w-3 rounded-full ${index <= stepIndex ? "bg-brand-red shadow-neon" : "bg-white/20"}`} />
-            <p className="mt-2 text-[10px] uppercase tracking-wide text-brand-cream/60 sm:text-[11px]">{step}</p>
+            <p className="mt-2 text-[10px] uppercase tracking-wide text-brand-cream/60 sm:text-[11px]">
+              {step === "served" ? "Delivered" : step}
+            </p>
           </div>
         ))}
       </div>

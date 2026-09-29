@@ -14,40 +14,77 @@ type Note = {
   createdAt: string;
 };
 
+function readJson(url: string, method = "GET"): Promise<Record<string, unknown> | null> {
+  return new Promise((resolve) => {
+    try {
+      const xhr = new XMLHttpRequest();
+      xhr.open(method, url);
+      xhr.timeout = 8000;
+      xhr.onload = () => {
+        if (xhr.status < 200 || xhr.status >= 300) {
+          resolve(null);
+          return;
+        }
+        try {
+          resolve(JSON.parse(xhr.responseText || "{}") as Record<string, unknown>);
+        } catch {
+          resolve(null);
+        }
+      };
+      xhr.onerror = () => resolve(null);
+      xhr.ontimeout = () => resolve(null);
+      xhr.send();
+    } catch {
+      resolve(null);
+    }
+  });
+}
+
 export function NotificationBell() {
   const { status } = useSession();
   const [open, setOpen] = useState(false);
   const [notes, setNotes] = useState<Note[]>([]);
   const [unread, setUnread] = useState(0);
   const seen = useRef(new Set<string>());
+  const alive = useRef(true);
 
   useEffect(() => {
     if (status !== "authenticated") return;
+    alive.current = true;
+
     if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "default") {
       Notification.requestPermission().catch(() => undefined);
     }
 
-    const load = async () => {
-      const res = await fetch("/api/notifications");
-      if (!res.ok) return;
-      const data = await res.json();
-      const list: Note[] = data.notifications || [];
-      setNotes(list);
-      setUnread(data.unread || 0);
-
-      list
-        .filter((note) => !note.read && !seen.current.has(note.id))
-        .forEach((note) => {
-          seen.current.add(note.id);
-          if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
-            new Notification(note.title, { body: note.body });
-          }
-        });
+    const pullNotes = () => {
+      if (!alive.current || document.visibilityState === "hidden") return;
+      void readJson("/api/notifications").then((data) => {
+        if (!alive.current || !data) return;
+        const list = (Array.isArray(data.notifications) ? data.notifications : []) as Note[];
+        setNotes(list);
+        setUnread(typeof data.unread === "number" ? data.unread : 0);
+        list
+          .filter((note) => !note.read && !seen.current.has(note.id))
+          .forEach((note) => {
+            seen.current.add(note.id);
+            if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
+              try {
+                new Notification(note.title, { body: note.body });
+              } catch {
+                // Ignore browser notification blocks.
+              }
+            }
+          });
+      });
     };
 
-    load();
-    const timer = setInterval(load, 15000);
-    return () => clearInterval(timer);
+    const start = window.setTimeout(pullNotes, 400);
+    const timer = window.setInterval(pullNotes, 15000);
+    return () => {
+      alive.current = false;
+      window.clearTimeout(start);
+      window.clearInterval(timer);
+    };
   }, [status]);
 
   if (status !== "authenticated") return null;
@@ -56,11 +93,10 @@ export function NotificationBell() {
     <div className="relative">
       <button
         type="button"
-        onClick={async () => {
+        onClick={() => {
           setOpen((value) => !value);
           if (!open && unread) {
-            await fetch("/api/notifications", { method: "PATCH" });
-            setUnread(0);
+            void readJson("/api/notifications", "PATCH").then(() => setUnread(0));
           }
         }}
         className="relative rounded-full p-2 text-brand-cream hover:text-brand-red"

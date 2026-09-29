@@ -1,9 +1,14 @@
 import { NextResponse } from "next/server";
-import { verifyOtp } from "@/lib/otp";
+import { verifyOtp, type OtpPurpose } from "@/lib/otp";
 
 export async function POST(request: Request) {
-  const { phone, otp } = await request.json();
-  const ok = verifyOtp(phone, otp);
+  const { email, otp, purpose } = await request.json();
+  const allowed: OtpPurpose[] = ["signup", "login", "reset"];
+  if (!email || !otp || !allowed.includes(purpose)) {
+    return NextResponse.json({ error: "Invalid OTP request" }, { status: 400 });
+  }
+
+  const ok = await verifyOtp(email, otp, purpose);
   if (!ok) {
     return NextResponse.json({ error: "Invalid or expired OTP" }, { status: 400 });
   }

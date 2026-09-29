@@ -1,20 +1,26 @@
 import { NextResponse } from "next/server";
-import { createOtp, sendOtpSms } from "@/lib/otp";
-import { normalizePhone } from "@/lib/phone";
+import { otpSendSchema } from "@/lib/validations";
+import { createAndSendEmailOtp } from "@/lib/otp";
+import { mailConfigured } from "@/lib/mail";
+import { SERVER_ERROR, userFacingError } from "@/lib/publicError";
 
 export async function POST(request: Request) {
-  const { phone: rawPhone } = await request.json();
-  const phone = normalizePhone(rawPhone || "");
-  if (!/^[6-9]\d{9}$/.test(phone)) {
-    return NextResponse.json({ error: "Enter a valid 10-digit mobile number" }, { status: 400 });
+  const body = await request.json();
+  const parsed = otpSendSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json({ error: "Enter a valid email" }, { status: 400 });
   }
 
-  const code = createOtp(phone);
-  await sendOtpSms(phone, code);
+  if (!mailConfigured()) {
+    return NextResponse.json({ error: SERVER_ERROR }, { status: 503 });
+  }
 
-  return NextResponse.json({
-    ok: true,
-    // Returned only in development so the flow is testable without Twilio.
-    demoOtp: process.env.NODE_ENV === "production" ? undefined : code,
-  });
+  try {
+    await createAndSendEmailOtp(parsed.data.email, parsed.data.purpose);
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    const raw = error instanceof Error ? error.message : SERVER_ERROR;
+    const status = raw.startsWith("Wait ") ? 429 : 500;
+    return NextResponse.json({ error: userFacingError(raw) }, { status });
+  }
 }

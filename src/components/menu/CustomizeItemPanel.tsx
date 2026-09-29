@@ -32,6 +32,8 @@ export type FoodCardItem = CustomizableItem & {
   isAvailable?: boolean;
 };
 
+const EMPTY_GROUPS: OptionGroup[] = [];
+
 function DietMark({ isVeg }: { isVeg: boolean }) {
   return (
     <span
@@ -57,7 +59,7 @@ export function CustomizeItemPanel({
   item: CustomizableItem;
   onClose: () => void;
 }) {
-  const groups = item.optionGroups || [];
+  const groups = item.optionGroups ?? EMPTY_GROUPS;
   const addItem = useCartStore((state) => state.addItem);
   const { ensureCart } = useCartAccess();
   const [quantity, setQuantity] = useState(1);
@@ -65,8 +67,8 @@ export function CustomizeItemPanel({
 
   useEffect(() => {
     setQuantity(1);
-    setSelections(defaultSelections(item.optionGroups || []));
-  }, [item.id]);
+    setSelections(defaultSelections(groups));
+  }, [item.id, groups]);
 
   useEffect(() => {
     const previous = document.body.style.overflow;

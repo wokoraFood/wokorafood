@@ -4,31 +4,49 @@ import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
 import { BRAND } from "@/lib/constants";
 
+function publicShop(row: {
+  name: string;
+  phone: string;
+  email: string;
+  address: string;
+  hours: string;
+}) {
+  return {
+    name: row.name,
+    phone: row.phone,
+    email: row.email,
+    address: row.address,
+    hours: row.hours,
+  };
+}
+
 export async function GET() {
   try {
-    const row = await prisma.cafeSettings.upsert({
-      where: { id: "cafe" },
-      update: { address: BRAND.address, email: BRAND.email, phone: BRAND.phone },
-      create: {
-        id: "cafe",
-        name: BRAND.name,
-        phone: BRAND.phone,
-        email: BRAND.email,
-        address: BRAND.address,
-        hours: "11:00 AM – 11:00 PM",
-      },
-    });
-    return NextResponse.json({ settings: row });
+    let row = await prisma.cafeSettings.findUnique({ where: { id: "cafe" } });
+    if (!row) {
+      row = await prisma.cafeSettings.create({
+        data: {
+          id: "cafe",
+          name: BRAND.name,
+          phone: BRAND.phone,
+          email: BRAND.email,
+          address: BRAND.address,
+          hours: "11:00 AM – 11:00 PM",
+          upiVpa: "",
+        },
+      });
+    }
+    return NextResponse.json({ settings: publicShop(row) });
   } catch (error) {
     console.error("[cafe-settings GET]", error);
     return NextResponse.json({
-      settings: {
+      settings: publicShop({
         name: "Wokora Foods",
         phone: BRAND.phone,
         email: BRAND.email,
         address: BRAND.address,
         hours: "11:00 AM – 11:00 PM",
-      },
+      }),
     });
   }
 }
@@ -56,8 +74,9 @@ export async function PATCH(request: Request) {
       email: body.email || BRAND.email,
       address: body.address || BRAND.address,
       hours: body.hours || "",
+      upiVpa: "",
     },
   });
 
-  return NextResponse.json({ settings });
+  return NextResponse.json({ settings: publicShop(settings) });
 }

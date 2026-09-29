@@ -3,6 +3,7 @@
 import { Clock, MapPin, Phone } from "lucide-react";
 import { BRAND } from "@/lib/constants";
 import { useCafeAddress } from "@/hooks/useCafeAddress";
+import { CafeMap } from "@/components/location/CafeMap";
 
 export function LocationHours() {
   const { address, mapSrc } = useCafeAddress();
@@ -34,13 +35,7 @@ export function LocationHours() {
           </div>
         </div>
         <div className="overflow-hidden rounded-2xl border border-white/10">
-          <iframe
-            key={mapSrc}
-            title="Wokora Foods map"
-            src={mapSrc}
-            className="h-56 w-full grayscale contrast-125 sm:h-80"
-            loading="lazy"
-          />
+          <CafeMap address={address} mapSrc={mapSrc} className="h-56 w-full sm:h-80" />
         </div>
       </div>
     </section>

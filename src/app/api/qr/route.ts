@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import QRCode from "qrcode";
+import { getSiteUrl } from "@/lib/constants";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const table = searchParams.get("table") || "1";
-  const base = process.env.NEXTAUTH_URL || "http://localhost:3000";
+  const base = getSiteUrl();
   const url = `${base}/table/${table}`;
   const dataUrl = await QRCode.toDataURL(url, {
     margin: 1,

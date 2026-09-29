@@ -6,7 +6,7 @@ import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
 import { StickyCartBar } from "@/components/order/StickyCartBar";
 import { Footer } from "@/components/layout/Footer";
 import { ToastHost } from "@/components/ui/Toast";
-import { BRAND } from "@/lib/constants";
+import { BRAND, SITE_URL } from "@/lib/constants";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
@@ -22,6 +22,7 @@ const bebas = Bebas_Neue({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: `${BRAND.name} | ${BRAND.tagline}`,
   description: `${BRAND.subTagline}. ${BRAND.name} at ${BRAND.location} — momos, noodles, burgers, and cafe classics.`,
 };

@@ -1,4 +1,3 @@
-import { Prisma } from "@prisma/client";
 import { randomUUID } from "crypto";
 import { prisma } from "@/lib/prisma";
 
@@ -11,12 +10,17 @@ type CartExtra = {
 };
 
 export async function loadCartExtras(userId: string, storeId: string) {
-  const rows = await prisma.$queryRaw<CartExtra[]>`
-    SELECT id, configKey, customization, selections, unitPrice
-    FROM CartLine
-    WHERE userId = ${userId} AND storeId = ${storeId}
-  `;
-  return new Map(rows.map((row) => [row.id, row]));
+  const rows = await prisma.cartLine.findMany({
+    where: { userId, storeId },
+    select: {
+      id: true,
+      configKey: true,
+      customization: true,
+      selections: true,
+      unitPrice: true,
+    },
+  });
+  return new Map(rows.map((row: CartExtra) => [row.id, row]));
 }
 
 export async function replaceCartLines(
@@ -32,33 +36,29 @@ export async function replaceCartLines(
   }[]
 ) {
   await prisma.cartLine.deleteMany({ where: { userId, storeId } });
-  const now = new Date();
-  for (const line of lines) {
-    await prisma.$executeRaw`
-      INSERT INTO CartLine (id, storeId, userId, menuItemId, quantity, configKey, customization, selections, unitPrice, createdAt, updatedAt)
-      VALUES (
-        ${randomUUID()},
-        ${storeId},
-        ${userId},
-        ${line.menuItemId},
-        ${line.quantity},
-        ${line.configKey},
-        ${line.customization},
-        ${line.selections},
-        ${line.unitPrice},
-        ${now},
-        ${now}
-      )
-    `;
-  }
+  if (lines.length === 0) return;
+  await prisma.cartLine.createMany({
+    data: lines.map((line) => ({
+      id: randomUUID(),
+      storeId,
+      userId,
+      menuItemId: line.menuItemId,
+      quantity: line.quantity,
+      configKey: line.configKey,
+      customization: line.customization,
+      selections: line.selections,
+      unitPrice: line.unitPrice,
+    })),
+  });
 }
 
 export async function attachItemCustomizations<T extends { items: { id: string }[] }>(records: T[]) {
   const ids = records.flatMap((record) => record.items.map((item) => item.id));
   if (ids.length === 0) return records;
-  const rows = await prisma.$queryRaw<{ id: string; customization: string }[]>`
-    SELECT id, customization FROM OrderItem WHERE id IN (${Prisma.join(ids)})
-  `;
+  const rows = await prisma.orderItem.findMany({
+    where: { id: { in: ids } },
+    select: { id: true, customization: true },
+  });
   const map = new Map(rows.map((row) => [row.id, row.customization || ""]));
   return records.map((record) => ({
     ...record,
@@ -73,9 +73,12 @@ export async function saveOrderItemCustomizations(
   items: { id: string }[],
   customizations: string[]
 ) {
-  for (let index = 0; index < items.length; index += 1) {
-    await prisma.$executeRaw`
-      UPDATE OrderItem SET customization = ${customizations[index] || ""} WHERE id = ${items[index].id}
-    `;
-  }
+  await Promise.all(
+    items.map((item, index) =>
+      prisma.orderItem.update({
+        where: { id: item.id },
+        data: { customization: customizations[index] || "" },
+      })
+    )
+  );
 }

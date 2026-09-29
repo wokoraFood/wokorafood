@@ -1,16 +1,13 @@
 "use client";
 
 import { FormEvent, Suspense, useEffect, useMemo, useState } from "react";
-import Image from "next/image";
-import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Search } from "lucide-react";
 import type { FoodCardItem } from "@/components/menu/CustomizeItemPanel";
 import { DietToggle, type DietPreference } from "@/components/menu/DietToggle";
+import { CategoryPlateGrid } from "@/components/menu/CategoryPlateGrid";
 import { useCartStore } from "@/store/cartStore";
-import { ALLOWED_CATEGORY_SLUGS } from "@/data/menu";
-import { CATEGORY_META, formatINR } from "@/lib/constants";
-import { uniqueByName } from "@/lib/uniqueByName";
+import { buildCategoryPlates, filterMenuItems, parseDiet } from "@/lib/menuView";
 
 type MenuItem = FoodCardItem & {
   category: { name: string; slug: string };
@@ -18,11 +15,6 @@ type MenuItem = FoodCardItem & {
 };
 
 type Category = { id: string; name: string; slug: string };
-
-function parseDiet(value: string | null): DietPreference {
-  if (value === "veg" || value === "nonveg" || value === "all") return value;
-  return "all";
-}
 
 function MenuPageInner() {
   const searchParams = useSearchParams();
@@ -44,7 +36,7 @@ function MenuPageInner() {
 
   useEffect(() => {
     const id = decodeURIComponent(window.location.hash.replace("#", ""));
-    if (id && ALLOWED_CATEGORY_SLUGS.includes(id)) {
+    if (id) {
       router.replace(`/menu/${id}?diet=${parseDiet(searchParams.get("diet"))}`);
     }
   }, [router, searchParams]);
@@ -54,7 +46,7 @@ function MenuPageInner() {
       .then((res) => res.json())
       .then((data) => {
         setItems(data.items || []);
-        setCategories((data.categories || []).filter((category: Category) => ALLOWED_CATEGORY_SLUGS.includes(category.slug)));
+        setCategories(data.categories || []);
       })
       .catch(() => {
         setItems([]);
@@ -66,36 +58,8 @@ function MenuPageInner() {
     event.preventDefault();
   };
 
-  const filtered = useMemo(() => {
-    const rows = items.filter((item) => {
-      const matchesDiet = diet === "all" || (diet === "veg" ? item.isVeg : !item.isVeg);
-      const matchesQuery =
-        !query ||
-        item.name.toLowerCase().includes(query.toLowerCase()) ||
-        item.description.toLowerCase().includes(query.toLowerCase()) ||
-        item.category.name.toLowerCase().includes(query.toLowerCase());
-      return matchesDiet && matchesQuery && ALLOWED_CATEGORY_SLUGS.includes(item.category.slug);
-    });
-    return uniqueByName(rows);
-  }, [items, diet, query]);
-
-  const plates = useMemo(() => {
-    return categories
-      .map((category) => {
-        const dishes = filtered.filter((item) => item.category.slug === category.slug);
-        if (!dishes.length) return null;
-        const featured = dishes.find((item) => item.isFeatured) || dishes[0];
-        const meta = CATEGORY_META.find((row) => row.slug === category.slug);
-        return {
-          category,
-          featured,
-          count: dishes.length,
-          fromPrice: Math.min(...dishes.map((item) => item.price)),
-          image: featured.imageUrl || meta?.image || "",
-        };
-      })
-      .filter((row): row is NonNullable<typeof row> => Boolean(row));
-  }, [filtered, categories]);
+  const filtered = useMemo(() => filterMenuItems(items, diet, query), [items, diet, query]);
+  const plates = useMemo(() => buildCategoryPlates(categories, filtered), [filtered, categories]);
 
   const changeDiet = (next: DietPreference) => {
     setDiet(next);
@@ -128,56 +92,16 @@ function MenuPageInner() {
         </form>
       </div>
 
-      <div className="mt-7 grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
-        {plates.map(({ category, featured, count, fromPrice, image }) => (
-          <Link
-            key={category.slug}
-            id={category.slug}
-            href={`/menu/${category.slug}?diet=${diet}`}
-            className="card-surface group overflow-hidden"
-          >
-            <div className="relative aspect-[4/3] overflow-hidden">
-              <Image
-                src={image}
-                alt={category.name}
-                fill
-                unoptimized
-                className="object-cover transition duration-500 group-hover:scale-110"
-              />
-              <span
-                className={`absolute left-3 top-3 h-3 w-3 ring-2 ring-white ${
-                  featured.isVeg ? "rounded-full bg-green-500" : "bg-red-500"
-                }`}
-                title={featured.isVeg ? "Vegetarian" : "Non-vegetarian"}
-              />
-              {!featured.isVeg && (
-                <span className="absolute right-3 top-3 rounded-full bg-brand-red px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
-                  Chicken
-                </span>
-              )}
-            </div>
-            <div className="space-y-3 p-4">
-              <div className="flex items-start justify-between gap-3">
-                <h2 className="font-display text-lg font-semibold">{category.name}</h2>
-                <p className="font-display text-brand-gold">{formatINR(fromPrice)}</p>
-              </div>
-              <p className="line-clamp-2 text-sm text-brand-cream/65">
-                {count} {count === 1 ? "dish" : "dishes"}. {featured.description}
-              </p>
-              <span className="btn-glow inline-flex w-full justify-center px-4 py-2 text-sm">Open {category.name}</span>
-            </div>
-          </Link>
-        ))}
-        {plates.length === 0 && (
-          <p className="text-brand-cream/60 sm:col-span-2 lg:col-span-3">
-            {diet === "veg"
-              ? "No veg dishes in this search."
-              : diet === "nonveg"
-                ? "No non-veg dishes in this search."
-                : "No dishes match that search yet."}
-          </p>
-        )}
-      </div>
+      <CategoryPlateGrid plates={plates} hrefFor={(slug) => `/menu/${slug}?diet=${diet}`} />
+      {plates.length === 0 && (
+        <p className="mt-7 text-brand-cream/60">
+          {diet === "veg"
+            ? "No veg dishes in this search."
+            : diet === "nonveg"
+              ? "No non-veg dishes in this search."
+              : "No dishes match that search yet."}
+        </p>
+      )}
     </div>
   );
 }

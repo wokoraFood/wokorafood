@@ -7,6 +7,9 @@ import { GST_RATE, loyaltyFromTotal } from "@/lib/constants";
 import { DEFAULT_STORE_ID, ensureDefaultStore } from "@/lib/store";
 import { afterOrderPlaced, type OrderPlacedEvent } from "@/lib/orderEvents";
 import { attachItemCustomizations, saveOrderItemCustomizations } from "@/lib/cartPersistence";
+import { recordPayment } from "@/lib/payments";
+import { assertSameOrigin, rateLimit } from "@/lib/security";
+import { serverErrorJson } from "@/lib/publicError";
 import {
   optionGroupsFor,
   sanitizeSelections,
@@ -15,23 +18,28 @@ import {
 } from "@/lib/customizations";
 
 export async function GET() {
-  const session = await getServerSession(authOptions);
-  if (!session?.user.id) {
-    return NextResponse.json({ error: "Login required" }, { status: 401 });
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user.id) {
+      return NextResponse.json({ error: "Login required" }, { status: 401 });
+    }
+
+    const storeId = session.user.storeId || DEFAULT_STORE_ID;
+    const isAdmin = session.user.role === "admin";
+    const orders = await prisma.order.findMany({
+      where: isAdmin ? { storeId } : { storeId, userId: session.user.id },
+      include: {
+        items: { include: { menuItem: true } },
+        user: { select: { name: true, phone: true, email: true } },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return NextResponse.json({ orders: await attachItemCustomizations(orders) });
+  } catch (error) {
+    console.error("[orders GET]", error);
+    return serverErrorJson();
   }
-
-  const storeId = session.user.storeId || DEFAULT_STORE_ID;
-  const isAdmin = session.user.role === "admin";
-  const orders = await prisma.order.findMany({
-    where: isAdmin ? { storeId } : { storeId, userId: session.user.id },
-    include: {
-      items: { include: { menuItem: true } },
-      user: { select: { name: true, phone: true, email: true } },
-    },
-    orderBy: isAdmin ? { serialNumber: "asc" } : { createdAt: "desc" },
-  });
-
-  return NextResponse.json({ orders: await attachItemCustomizations(orders) });
 }
 
 export async function POST(request: Request) {
@@ -39,11 +47,21 @@ export async function POST(request: Request) {
   if (!session?.user.id) {
     return NextResponse.json({ error: "Login required to place an order" }, { status: 401 });
   }
+  const originBlock = assertSameOrigin(request);
+  if (originBlock) return originBlock;
+  const limited = rateLimit(`order:${session.user.id}`, 20, 10 * 60 * 1000);
+  if (limited) return limited;
   if (session.user.role === "admin") {
     return NextResponse.json({ error: "Kitchen accounts cannot place customer orders" }, { status: 403 });
   }
 
-  const parsed = orderSchema.safeParse(await request.json());
+  let parsedBody: unknown;
+  try {
+    parsedBody = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid request" }, { status: 400 });
+  }
+  const parsed = orderSchema.safeParse(parsedBody);
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.flatten().fieldErrors }, { status: 400 });
   }
@@ -56,6 +74,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Table number is required for dine-in" }, { status: 400 });
   }
 
+  try {
   const menuIds = Array.from(new Set(items.map((item) => item.menuItemId)));
   const menuItems = await prisma.menuItem.findMany({
     where: { id: { in: menuIds }, isAvailable: true, storeId },
@@ -124,6 +143,14 @@ export async function POST(request: Request) {
     order.items,
     priced.map((row) => row.customization || "")
   );
+  await recordPayment({
+    storeId,
+    orderId: order.id,
+    userId: order.userId,
+    method: paymentMethod || "upi",
+    status: paymentMethod === "cash" ? "pay_at_counter" : "pending",
+    amount: totalAmount,
+  });
   const itemsWithNotes = (await attachItemCustomizations([order]))[0];
 
   await prisma.user.update({
@@ -158,4 +185,8 @@ export async function POST(request: Request) {
   await afterOrderPlaced(event);
 
   return NextResponse.json({ order: itemsWithNotes });
+  } catch (error) {
+    console.error("[orders POST]", error);
+    return serverErrorJson();
+  }
 }

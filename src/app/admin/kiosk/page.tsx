@@ -50,8 +50,8 @@ export default function KioskPrintPage() {
     <div className="mx-auto max-w-xl px-4 py-20 text-center">
       <h1 className="font-display text-4xl font-bold neon-red">Counter print kiosk</h1>
       <p className="mt-4 text-brand-cream/70">
-        Leave this tab open on the counter PC. Set the thermal printer as the default
-        and enable silent/auto print in the browser for this site.
+        Leave this tab open on the kitchen PC. Set the connected printer as Windows default.
+        New orders will open the print dialog automatically.
       </p>
       <p className="mt-8 font-mono text-brand-gold">{last}</p>
     </div>

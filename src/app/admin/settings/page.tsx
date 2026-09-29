@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { readJson } from "@/lib/safeJson";
 import { ThemePicker } from "@/components/theme/ThemePicker";
@@ -28,18 +28,27 @@ export default function KitchenSettingsPage() {
   const [reply, setReply] = useState<Record<string, string>>({});
   const [saved, setSaved] = useState("");
 
-  const load = () => {
+  const load = useCallback(() => {
     fetch("/api/cafe-settings")
       .then((res) => readJson<{ settings?: typeof settings }>(res, {}))
-      .then((data) => data.settings && setSettings(data.settings));
+      .then((data) =>
+        data.settings &&
+        setSettings({
+          name: data.settings.name || "Wokora Foods",
+          phone: data.settings.phone || "",
+          email: data.settings.email || "",
+          address: data.settings.address || "",
+          hours: data.settings.hours || "",
+        }),
+      );
     fetch("/api/support")
       .then((res) => readJson<{ tickets?: Ticket[] }>(res, { tickets: [] }))
       .then((data) => setTickets(data.tickets || []));
-  };
+  }, []);
 
   useEffect(() => {
     load();
-  }, []);
+  }, [load]);
 
   const saveShop = async (event: FormEvent) => {
     event.preventDefault();
@@ -86,6 +95,9 @@ export default function KitchenSettingsPage() {
           <input value={settings.email} onChange={(event) => setSettings({ ...settings, email: event.target.value })} className="rounded-full border border-white/10 bg-white/5 px-4 py-2" placeholder="Email" />
           <input value={settings.hours} onChange={(event) => setSettings({ ...settings, hours: event.target.value })} className="rounded-full border border-white/10 bg-white/5 px-4 py-2" placeholder="Hours" />
           <textarea value={settings.address} onChange={(event) => setSettings({ ...settings, address: event.target.value })} className="rounded-2xl border border-white/10 bg-white/5 px-4 py-2 md:col-span-2" placeholder="Address" />
+          <p className="text-sm text-brand-cream/50 md:col-span-2">
+            Customer checkout shows Wokora Foods only. Bank settlement is stored on the server, not in the browser.
+          </p>
           {saved && <p className="text-sm text-brand-gold md:col-span-2">{saved}</p>}
           <button className="btn-glow w-fit px-5 py-2">Save shop</button>
           <Link href="/admin/menu" className="self-center text-sm text-brand-gold">Edit menu →</Link>

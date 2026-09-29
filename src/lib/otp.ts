@@ -1,31 +1,71 @@
-type OtpRecord = { code: string; expiresAt: number };
+import { createHash } from "crypto";
+import { prisma } from "@/lib/prisma";
+import { sendMail } from "@/lib/mail";
+import { BRAND } from "@/lib/constants";
 
-const store = new Map<string, OtpRecord>();
+export type OtpPurpose = "signup" | "login" | "reset";
 
-export function createOtp(phone: string) {
-  const code = String(Math.floor(100000 + Math.random() * 900000));
-  store.set(phone, { code, expiresAt: Date.now() + 5 * 60 * 1000 });
-  return code;
+const OTP_TTL_MS = 5 * 60 * 1000;
+const RESEND_GAP_MS = 45 * 1000;
+
+function hashOtp(email: string, purpose: OtpPurpose, code: string) {
+  return createHash("sha256").update(`${email}:${purpose}:${code}`).digest("hex");
 }
 
-export function verifyOtp(phone: string, code: string) {
-  const record = store.get(phone);
-  if (!record) return false;
-  if (Date.now() > record.expiresAt) {
-    store.delete(phone);
-    return false;
+export async function createAndSendEmailOtp(email: string, purpose: OtpPurpose) {
+  const normalized = email.trim().toLowerCase();
+  const recent = await prisma.emailOtp.findFirst({
+    where: { email: normalized, purpose, consumed: false },
+    orderBy: { createdAt: "desc" },
+  });
+
+  if (recent && Date.now() - recent.createdAt.getTime() < RESEND_GAP_MS) {
+    const wait = Math.ceil((RESEND_GAP_MS - (Date.now() - recent.createdAt.getTime())) / 1000);
+    throw new Error(`Wait ${wait}s before requesting another OTP.`);
   }
-  if (record.code !== code) return false;
-  store.delete(phone);
-  return true;
+
+  await prisma.emailOtp.updateMany({
+    where: { email: normalized, purpose, consumed: false },
+    data: { consumed: true },
+  });
+
+  const code = String(Math.floor(100000 + Math.random() * 900000));
+  await prisma.emailOtp.create({
+    data: {
+      email: normalized,
+      purpose,
+      codeHash: hashOtp(normalized, purpose, code),
+      expiresAt: new Date(Date.now() + OTP_TTL_MS),
+    },
+  });
+
+  await sendMail(
+    normalized,
+    `${BRAND.name} verification code`,
+    `Your ${BRAND.name} ${purpose} code is ${code}. It expires in 5 minutes.`
+  );
+
+  return { ok: true as const };
 }
 
-/**
- * Placeholder SMS sender. Wire Twilio / MSG91 here later:
- * - Twilio: client.messages.create({ to, from, body })
- * - MSG91: POST flow with authkey + template
- */
-export async function sendOtpSms(phone: string, code: string) {
-  console.info(`[OTP] ${phone} → ${code} (SMS provider not configured)`);
-  return { delivered: false, provider: "placeholder", code };
+export async function verifyOtp(email: string, code: string, purpose: OtpPurpose) {
+  const normalized = email.trim().toLowerCase();
+  const record = await prisma.emailOtp.findFirst({
+    where: {
+      email: normalized,
+      purpose,
+      consumed: false,
+      expiresAt: { gt: new Date() },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  if (!record) return false;
+  if (record.codeHash !== hashOtp(normalized, purpose, code.trim())) return false;
+
+  await prisma.emailOtp.update({
+    where: { id: record.id },
+    data: { consumed: true },
+  });
+  return true;
 }

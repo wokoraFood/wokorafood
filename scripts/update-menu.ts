@@ -3,7 +3,6 @@ import { MENU_CATEGORIES, MENU_ITEMS } from "../src/data/menu";
 
 const prisma = new PrismaClient();
 const storeId = "wokora";
-const keepItems = MENU_ITEMS.map((row) => row.slug);
 
 async function main() {
   await prisma.store.upsert({
@@ -62,21 +61,7 @@ async function main() {
     });
   }
 
-  await prisma.menuItem.updateMany({
-    where: { storeId, slug: { notIn: keepItems } },
-    data: { isAvailable: false, isFeatured: false },
-  });
-
-  const keep = new Set<string>(MENU_CATEGORIES.map((row) => row.slug));
-  const staleCategories = categories.filter((row) => !keep.has(row.slug));
-  for (const category of staleCategories) {
-    await prisma.menuItem.updateMany({
-      where: { categoryId: category.id },
-      data: { isAvailable: false, isFeatured: false },
-    });
-  }
-
-  console.log("Menu locked to burger, coffee, momos, spring rolls, noodles, chilli potato, fried rice, wraps, lollipop.");
+  console.log("Menu catalog synced. Kitchen/admin extra items were left in place.");
 }
 
 main()

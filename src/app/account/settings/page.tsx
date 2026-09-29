@@ -1,13 +1,17 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
+import Link from "next/link";
 import { ThemePicker } from "@/components/theme/ThemePicker";
 import { DietToggle, type DietPreference } from "@/components/menu/DietToggle";
+import { OrderBill, type BillOrder } from "@/components/account/OrderBill";
 
 export default function SettingsPage() {
   const [form, setForm] = useState({ name: "", email: "", password: "" });
   const [diet, setDiet] = useState<DietPreference>("all");
   const [message, setMessage] = useState("");
+  const [bills, setBills] = useState<BillOrder[]>([]);
+  const [lastDelivered, setLastDelivered] = useState<BillOrder | null>(null);
 
   useEffect(() => {
     fetch("/api/account")
@@ -17,6 +21,8 @@ export default function SettingsPage() {
           setForm({ name: data.user.name, email: data.user.email || "", password: "" });
           const saved = data.user.dietPreference as DietPreference;
           if (saved === "veg" || saved === "nonveg" || saved === "all") setDiet(saved);
+          setBills(data.user.orders || []);
+          setLastDelivered(data.user.lastDelivered || null);
         }
       });
   }, []);
@@ -32,9 +38,34 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="max-w-xl">
+    <div className="max-w-2xl">
       <h1 className="heading-underline font-display text-3xl font-bold">Settings</h1>
       <p className="mt-3 text-sm text-brand-cream/60">Update your name, email, and password here. Your phone number is your cafe ID.</p>
+
+      {lastDelivered ? (
+        <div className="mt-8">
+          <h2 className="font-display text-xl font-semibold">Last delivered</h2>
+          <div className="mt-3">
+            <OrderBill order={lastDelivered} compact />
+          </div>
+        </div>
+      ) : null}
+
+      <div className="mt-8">
+        <div className="flex items-end justify-between gap-3">
+          <h2 className="font-display text-xl font-semibold">Bills & payments</h2>
+          <Link href="/account/orders" className="text-sm text-brand-gold">
+            All bills →
+          </Link>
+        </div>
+        <p className="mt-1 text-sm text-brand-cream/60">Paid and failed payments are stored in the cafe database.</p>
+        <div className="mt-3 space-y-3">
+          {bills.slice(0, 5).map((order) => (
+            <OrderBill key={order.id} order={order} compact />
+          ))}
+          {bills.length === 0 ? <p className="text-sm text-brand-cream/50">No bills yet.</p> : null}
+        </div>
+      </div>
       <div className="card-surface mt-8 p-6">
         <p className="font-display text-lg font-semibold">Food preference</p>
         <p className="mt-1 mb-4 text-sm text-brand-cream/60">Saved only to this login.</p>

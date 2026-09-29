@@ -1,6 +1,7 @@
 import { prisma } from "./prisma";
 import { BRAND, displayOrderNumber } from "./constants";
 import { DEFAULT_STORE_ID } from "./store";
+import { mailConfigured, sendMail } from "./mail";
 
 type NotifyInput = {
   userId: string;
@@ -77,6 +78,13 @@ export async function notifyOrderEta(order: {
  * Without SMTP, the same message is still stored as an in-app notification.
  */
 async function sendEmail(to: string, subject: string, text: string) {
-  console.info(`[email] ${to}\n${subject}\n${text}`);
-  // Wire SMTP later with nodemailer when SMTP_HOST / SMTP_USER / SMTP_PASS are set.
+  if (!mailConfigured()) {
+    console.info(`[email] ${to}\n${subject}\n${text}`);
+    return;
+  }
+  try {
+    await sendMail(to, subject, text);
+  } catch (error) {
+    console.error("[email]", error);
+  }
 }

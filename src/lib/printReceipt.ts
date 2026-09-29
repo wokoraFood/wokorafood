@@ -83,7 +83,7 @@ async function sendToPrintAgent(order: PrintableOrder) {
 
 /**
  * Approach 2 scaffold. In production open a TCP socket to the printer
- * (port 9100 is typical) and write ESC/POS. On Vercel you cannot open
+ * (port 9100 is typical) and write ESC/POS. On a public Node host you cannot open
  * arbitrary TCP sockets — use a cafe-side relay, VPN, or vendor API.
  */
 async function sendEscpos(order: PrintableOrder) {

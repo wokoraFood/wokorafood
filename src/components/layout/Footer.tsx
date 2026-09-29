@@ -195,6 +195,12 @@ export function Footer() {
               <button className="btn-glow shrink-0 px-5 py-2.5 text-sm">Join</button>
             </div>
             {message && <p className="mt-2 text-xs text-brand-gold">{message}</p>}
+            <div className="mt-4 flex items-center justify-between gap-4 border-t border-white/10 pt-3">
+              <Image src="/images/brand/fssai.svg" alt="FSSAI" width={96} height={36} unoptimized className="h-8 w-auto sm:h-9" />
+              <p className="shrink-0 font-display text-xs tabular-nums tracking-[0.16em] text-[#E87722] sm:text-sm">
+                {BRAND.fssai.number}
+              </p>
+            </div>
           </form>
         </div>
       </div>

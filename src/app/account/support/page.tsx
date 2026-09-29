@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
 import { BRAND, brandWhatsApp } from "@/lib/constants";
 import { readJson } from "@/lib/safeJson";
 
@@ -14,10 +15,17 @@ type Ticket = {
 };
 
 export default function SupportPage() {
-  const [form, setForm] = useState({ subject: "", message: "" });
+  const { data: session } = useSession();
+  const [form, setForm] = useState({ subject: "", message: "", email: "" });
   const [done, setDone] = useState("");
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [reply, setReply] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    if (session?.user.email) {
+      setForm((current) => (current.email ? current : { ...current, email: session.user.email || "" }));
+    }
+  }, [session?.user.email]);
 
   const load = () =>
     fetch("/api/support")
@@ -35,9 +43,13 @@ export default function SupportPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(form),
     });
-    setDone(res.ok ? "Your ticket has been sent to the kitchen team." : "Could not send your ticket. Please try again.");
+    setDone(
+      res.ok
+        ? "Query sent. The kitchen got WhatsApp + email, and a confirmation is on your inbox."
+        : "Could not send your ticket. Please try again."
+    );
     if (res.ok) {
-      setForm({ subject: "", message: "" });
+      setForm({ subject: "", message: "", email: form.email });
       load();
     }
   };
@@ -45,7 +57,9 @@ export default function SupportPage() {
   return (
     <div className="max-w-2xl">
       <h1 className="heading-underline font-display text-3xl font-bold">Customer support</h1>
-      <p className="mt-3 text-brand-cream/65">The kitchen team reviews every case and replies from here.</p>
+      <p className="mt-3 text-brand-cream/65">
+        Submit a query and the kitchen gets it on WhatsApp and email. You get an email confirmation right away.
+      </p>
       <div className="mt-6 grid gap-3 sm:grid-cols-3">
         <a href={`tel:${BRAND.phone.replace(/\s/g, "")}`} className="card-surface p-4 text-sm">
           Call<br /><span className="text-brand-gold">{BRAND.phone}</span>
@@ -61,6 +75,14 @@ export default function SupportPage() {
         </a>
       </div>
       <form onSubmit={submit} className="card-surface mt-8 space-y-4 p-6">
+        <input
+          required
+          type="email"
+          value={form.email}
+          onChange={(event) => setForm({ ...form, email: event.target.value })}
+          placeholder="Your email — confirmation comes here"
+          className="w-full rounded-full border border-white/10 bg-white/5 px-4 py-3 outline-none focus:border-brand-red"
+        />
         <input
           required
           value={form.subject}

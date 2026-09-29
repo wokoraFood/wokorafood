@@ -1,6 +1,7 @@
 import { prisma } from "./prisma";
 import { notifyOrderPlaced } from "./notify";
 import { BRAND, displayOrderNumber } from "./constants";
+import { paymentStatusLabel } from "./orderLabels";
 
 export type OrderPlacedEvent = {
   type: "OrderPlaced";
@@ -29,6 +30,28 @@ export type OrderUpdatedEvent = {
   status: string;
   etaMinutes?: number | null;
 };
+
+async function kitchenStaffIds(storeId: string) {
+  const cooks = await prisma.user.findMany({
+    where: { storeId, role: "admin" },
+    select: { id: true },
+  });
+  return cooks.map((row) => row.id);
+}
+
+async function notifyKitchen(storeId: string, orderId: string, title: string, body: string) {
+  const ids = await kitchenStaffIds(storeId);
+  if (!ids.length) return;
+  await prisma.notification.createMany({
+    data: ids.map((userId) => ({
+      storeId,
+      userId,
+      title,
+      body,
+      orderId,
+    })),
+  });
+}
 
 async function printTicket(event: OrderPlacedEvent) {
   await prisma.printJob.create({
@@ -80,9 +103,35 @@ async function notify(event: OrderPlacedEvent | OrderUpdatedEvent) {
 }
 
 export async function afterOrderPlaced(event: OrderPlacedEvent) {
-  await Promise.allSettled([printTicket(event), notify(event)]);
+  const number = displayOrderNumber(event.serialNumber);
+  await Promise.allSettled([
+    printTicket(event),
+    notify(event),
+    notifyKitchen(
+      event.storeId,
+      event.orderId,
+      `New order ${number}`,
+      `${event.customer.name} · ${paymentStatusLabel(event.paymentStatus)} · ₹${Math.round(event.totalAmount)}`
+    ),
+  ]);
 }
 
 export async function afterOrderUpdated(event: OrderUpdatedEvent) {
   await notify(event);
+}
+
+export async function afterPaymentChanged(event: {
+  storeId: string;
+  orderId: string;
+  serialNumber: number;
+  paymentStatus: string;
+  totalAmount: number;
+}) {
+  const number = displayOrderNumber(event.serialNumber);
+  await notifyKitchen(
+    event.storeId,
+    event.orderId,
+    `Payment · ${number}`,
+    `${paymentStatusLabel(event.paymentStatus)} · ₹${Math.round(event.totalAmount)}`
+  );
 }

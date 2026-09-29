@@ -1,28 +1,31 @@
 import { NextResponse } from "next/server";
+import { createAndSendEmailOtp } from "@/lib/otp";
+import { mailConfigured } from "@/lib/mail";
 import { prisma } from "@/lib/prisma";
-import { createResetToken } from "@/lib/resetTokens";
+import { SERVER_ERROR, userFacingError } from "@/lib/publicError";
 
 export async function POST(request: Request) {
-  const { identifier } = await request.json();
-  if (!identifier) {
-    return NextResponse.json({ error: "Phone or email is required" }, { status: 400 });
+  const { email } = await request.json();
+  if (!email || !String(email).includes("@")) {
+    return NextResponse.json({ error: "Enter the email on your account" }, { status: 400 });
   }
 
-  const user = await prisma.user.findFirst({
-    where: { OR: [{ phone: identifier }, { email: identifier }] },
-  });
+  if (!mailConfigured()) {
+    return NextResponse.json({ error: SERVER_ERROR }, { status: 503 });
+  }
 
+  const normalized = String(email).trim().toLowerCase();
+  const user = await prisma.user.findUnique({ where: { email: normalized } });
   if (!user) {
     return NextResponse.json({ ok: true });
   }
 
-  const token = createResetToken(user.id);
-  const resetUrl = `${process.env.NEXTAUTH_URL || "http://localhost:3000"}/reset-password?token=${token}`;
-
-  console.info(`[reset] ${user.phone}: ${resetUrl}`);
-
-  return NextResponse.json({
-    ok: true,
-    demoResetUrl: process.env.NODE_ENV === "production" ? undefined : resetUrl,
-  });
+  try {
+    await createAndSendEmailOtp(normalized, "reset");
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    const raw = error instanceof Error ? error.message : SERVER_ERROR;
+    const status = raw.startsWith("Wait ") ? 429 : 500;
+    return NextResponse.json({ error: userFacingError(raw) }, { status });
+  }
 }

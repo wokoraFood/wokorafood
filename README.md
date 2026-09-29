@@ -5,8 +5,8 @@ Production-ready cafe site for **wokorafoods.com** — dark neon QSR branding, t
 ## Stack
 
 - Next.js 14 App Router, TypeScript, TailwindCSS, Framer Motion
-- NextAuth.js (JWT, phone/email + optional Google)
-- Prisma + PostgreSQL
+- NextAuth.js (JWT, Google, password, and email OTP)
+- Prisma + Hostinger MySQL
 - Zustand cart
 - Print abstraction in `src/lib/printReceipt.ts`
 
@@ -20,12 +20,9 @@ npm run db:seed
 npm run dev
 ```
 
-Local development uses SQLite (`prisma/dev.db`) so you can run without Docker. For production, switch `provider` in `prisma/schema.prisma` to `postgresql`, point `DATABASE_URL` at Neon/Railway/Render, then `prisma db push` (or migrate). `docker-compose.yml` is included if you prefer a local Postgres instead.
+Point `DATABASE_URL` at the Hostinger MySQL database (`mysql://user:password@host:3306/dbname`). Kitchen/admin changes and customer accounts all persist there. Seed only creates the kitchen admin when `KITCHEN_ADMIN_PHONE`, `KITCHEN_ADMIN_EMAIL`, and `KITCHEN_ADMIN_PASSWORD` are set.
 
-Demo accounts after seed:
-
-- Admin: `9999999999` / `Admin@1234`
-- Customer: `9876543210` / `Taste@1234`
+Google login needs `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`. Email OTP needs `SMTP_HOST`, `SMTP_USER`, and `SMTP_PASS`.
 
 ## Pages
 
@@ -49,11 +46,17 @@ Swap approaches by changing env vars only — order APIs stay the same.
 
 ## Deploy
 
-- Frontend: Vercel
-- Database: Neon / Railway / Render Postgres
-- Set `DATABASE_URL`, `NEXTAUTH_URL`, `NEXTAUTH_SECRET`
-- Optional: `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`
-- Real dish photos: drop files into `public/images/menu/` and update `imageUrl` in admin
+Cloudflare **free** is DNS + SSL for **wokorafoods.com**. This Next.js app needs Node (Prisma / NextAuth / uploads), so the site runs on a Hostinger VPS with Docker. MySQL stays on Hostinger.
+
+1. Cloudflare → Add site `wokorafoods.com` → copy the two nameservers.
+2. GoDaddy → DNS → Nameservers → replace with Cloudflare’s.
+3. Cloudflare DNS (orange-cloud proxy, SSL **Full (strict)**):
+   - `A` `@` → VPS IPv4
+   - `CNAME` `www` → `wokorafoods.com`
+4. On the VPS: set `.env` (`DATABASE_URL` Hostinger MySQL, `NEXTAUTH_URL=https://wokorafoods.com`, Google, SMTP, kitchen admin) then `docker compose -f docker-compose.vps.yml up -d --build`.
+5. Google OAuth origins: `https://wokorafoods.com` and `https://www.wokorafoods.com`. Redirects: `/api/auth/callback/google` on both hosts.
+
+Disable Cloudflare Rocket Loader for this site (it can break Next.js).
 
 ## Menu images
 
