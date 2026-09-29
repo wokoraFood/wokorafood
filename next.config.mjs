@@ -11,6 +11,9 @@ const nextConfig = {
       { protocol: "https", hostname: "images.pexels.com" },
     ],
   },
+  async redirects() {
+    return [{ source: "/home", destination: "/", permanent: false }];
+  },
   async headers() {
     return [
       {
