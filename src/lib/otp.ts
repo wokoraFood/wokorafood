@@ -48,7 +48,7 @@ export async function createAndSendEmailOtp(email: string, purpose: OtpPurpose) 
   return { ok: true as const };
 }
 
-export async function verifyOtp(email: string, code: string, purpose: OtpPurpose) {
+export async function verifyOtp(email: string, code: string, purpose: OtpPurpose, consume = true) {
   const normalized = email.trim().toLowerCase();
   const record = await prisma.emailOtp.findFirst({
     where: {
@@ -63,9 +63,11 @@ export async function verifyOtp(email: string, code: string, purpose: OtpPurpose
   if (!record) return false;
   if (record.codeHash !== hashOtp(normalized, purpose, code.trim())) return false;
 
-  await prisma.emailOtp.update({
-    where: { id: record.id },
-    data: { consumed: true },
-  });
+  if (consume) {
+    await prisma.emailOtp.update({
+      where: { id: record.id },
+      data: { consumed: true },
+    });
+  }
   return true;
 }

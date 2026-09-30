@@ -27,7 +27,7 @@ export function DietGate({
         <button
           type="button"
           onClick={() => onPick("veg")}
-          className="group relative min-h-[220px] overflow-hidden rounded-[2rem] text-left sm:min-h-[280px] md:min-h-[420px]"
+          className="group relative min-h-[200px] overflow-hidden rounded-[2rem] text-left sm:min-h-[260px] md:min-h-[320px] lg:min-h-[420px]"
         >
           <Image src={VEG_HERO} alt="Vegetarian dishes" fill className="object-cover transition duration-500 group-hover:scale-105" />
           <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-black/10" />
@@ -35,7 +35,7 @@ export function DietGate({
             <span className="grid h-8 w-8 place-items-center rounded-md border-2 border-green-400 bg-black/40">
               <span className="h-3.5 w-3.5 rounded-full bg-green-400" />
             </span>
-            <p className="mt-4 font-display text-4xl font-bold sm:text-5xl md:text-6xl">VEG</p>
+            <p className="mt-4 font-display text-3xl font-bold sm:text-5xl lg:text-6xl">VEG</p>
             <p className="mt-1 text-sm text-white/70">Green-dot menu only</p>
           </div>
         </button>
@@ -43,7 +43,7 @@ export function DietGate({
         <button
           type="button"
           onClick={() => onPick("nonveg")}
-          className="group relative min-h-[220px] overflow-hidden rounded-[2rem] text-left sm:min-h-[280px] md:min-h-[420px]"
+          className="group relative min-h-[200px] overflow-hidden rounded-[2rem] text-left sm:min-h-[260px] md:min-h-[320px] lg:min-h-[420px]"
         >
           <Image src={NONVEG_HERO} alt="Non-vegetarian dishes" fill className="object-cover transition duration-500 group-hover:scale-105" />
           <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-black/10" />
@@ -51,7 +51,7 @@ export function DietGate({
             <span className="grid h-8 w-8 place-items-center rounded-md border-2 border-red-500 bg-black/40">
               <span className="h-3.5 w-3.5 bg-red-500" />
             </span>
-            <p className="mt-4 font-display text-4xl font-bold sm:text-5xl md:text-6xl">NON-VEG</p>
+            <p className="mt-4 font-display text-3xl font-bold sm:text-5xl lg:text-6xl">NON-VEG</p>
             <p className="mt-1 text-sm text-white/70">Chicken, seafood, and classics</p>
           </div>
         </button>

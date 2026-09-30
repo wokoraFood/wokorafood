@@ -104,7 +104,7 @@ export default function CartPage() {
   }
 
   return (
-    <div className="mx-auto grid max-w-6xl gap-6 px-4 py-8 sm:px-6 sm:py-10 lg:grid-cols-[1.4fr_0.8fr] lg:gap-8">
+    <div className="page-bottom mx-auto grid max-w-6xl gap-6 page-pad py-6 sm:py-10 md:grid-cols-[1.3fr_0.9fr] md:gap-6 lg:grid-cols-[1.4fr_0.8fr] lg:gap-8">
       <section>
         <h1 className="heading-underline font-display text-3xl font-bold">Cart</h1>
         <div className="mt-8 space-y-4">
@@ -115,9 +115,9 @@ export default function CartPage() {
               </div>
               <div className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
                 <div className="min-w-0">
-                  <h2 className="font-display font-semibold leading-tight">{item.name}</h2>
+                  <h2 className="truncate font-display font-semibold leading-tight">{item.name}</h2>
                   {item.customization ? (
-                    <p className="mt-0.5 text-xs text-brand-cream/50">{item.customization}</p>
+                    <p className="mt-0.5 line-clamp-2 break-words text-xs text-brand-cream/50">{item.customization}</p>
                   ) : null}
                   <p className="text-sm text-brand-gold">{formatINR(item.price)}</p>
                 </div>
@@ -171,9 +171,9 @@ export default function CartPage() {
         )}
         <div className="mt-4">
           <p className="text-sm">Payment</p>
-          <div className="mt-2 grid grid-cols-3 gap-2 text-sm">
+          <div className="mt-2 grid grid-cols-3 gap-2 text-xs sm:text-sm">
             {([
-              ["upi", "UPI apps"],
+              ["upi", "UPI"],
               ["card", "Card"],
               ["cash", "Cash"],
             ] as const).map(([value, label]) => (
@@ -181,7 +181,7 @@ export default function CartPage() {
                 key={value}
                 type="button"
                 onClick={() => setPaymentMethod(value)}
-                className={`rounded-full py-2 ${paymentMethod === value ? "bg-brand-red" : "border border-white/10"}`}
+                className={`min-h-11 rounded-full px-1 py-2 ${paymentMethod === value ? "bg-brand-red" : "border border-white/10"}`}
               >
                 {label}
               </button>

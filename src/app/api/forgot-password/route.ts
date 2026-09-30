@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
-import { createAndSendEmailOtp } from "@/lib/otp";
-import { mailConfigured } from "@/lib/mail";
+import { mailConfigured, sendMail } from "@/lib/mail";
 import { prisma } from "@/lib/prisma";
+import { createResetToken } from "@/lib/resetTokens";
+import { getSiteUrl, BRAND } from "@/lib/constants";
 import { SERVER_ERROR, userFacingError } from "@/lib/publicError";
 
 export async function POST(request: Request) {
@@ -21,11 +22,16 @@ export async function POST(request: Request) {
   }
 
   try {
-    await createAndSendEmailOtp(normalized, "reset");
+    const token = createResetToken(user.id);
+    const link = `${getSiteUrl()}/reset-password?token=${token}`;
+    await sendMail(
+      normalized,
+      `${BRAND.name} password reset`,
+      `Reset your ${BRAND.name} password with this link. It expires in 30 minutes.\n\n${link}`
+    );
     return NextResponse.json({ ok: true });
   } catch (error) {
     const raw = error instanceof Error ? error.message : SERVER_ERROR;
-    const status = raw.startsWith("Wait ") ? 429 : 500;
-    return NextResponse.json({ error: userFacingError(raw) }, { status });
+    return NextResponse.json({ error: userFacingError(raw) }, { status: 500 });
   }
 }

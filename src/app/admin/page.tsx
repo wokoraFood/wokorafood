@@ -114,7 +114,7 @@ export default function AdminOrdersPage() {
   };
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-10">
+    <div className="page-bottom mx-auto max-w-7xl page-pad py-6 sm:py-10">
       <h1 className="heading-underline font-display text-3xl font-bold">Live orders</h1>
       <p className="mt-3 text-sm text-brand-cream/60">
         Every customer order appears here immediately, with live payment status. Newest orders stay on top.
@@ -127,10 +127,10 @@ export default function AdminOrdersPage() {
               key={order.id}
               className={`card-surface p-5 ${unpaid ? "border border-brand-red/40" : ""}`}
             >
-              <div className="flex items-start justify-between gap-3">
-                <div>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div className="min-w-0">
                   <p className="font-display text-3xl text-brand-gold">{displayOrderNumber(order.serialNumber)}</p>
-                  <p className="text-sm text-brand-cream/60">
+                  <p className="break-words text-sm text-brand-cream/60">
                     {order.user.name} · {order.user.phone}
                   </p>
                   <p className="text-sm text-brand-gold">
@@ -141,8 +141,8 @@ export default function AdminOrdersPage() {
                     {order.etaMinutes ? ` · ETA ${order.etaMinutes} min` : ""}
                   </p>
                 </div>
-                <div className="flex flex-col items-end gap-2">
-                  <span className={`rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-wide ${paymentTone(order.paymentStatus)}`}>
+                <div className="flex flex-col items-start gap-2 sm:items-end">
+                  <span className={`max-w-full whitespace-normal rounded-full border px-3 py-1 text-left text-xs font-semibold uppercase tracking-wide ${paymentTone(order.paymentStatus)}`}>
                     {paymentStatusLabel(order.paymentStatus)}
                     {order.paymentMethod ? ` · ${paymentMethodLabel(order.paymentMethod)}` : ""}
                   </span>
@@ -177,7 +177,7 @@ export default function AdminOrdersPage() {
                   placeholder="Minutes"
                   className="w-24 rounded-full border border-white/10 bg-ink px-3 py-1.5 text-sm"
                 />
-                <button className="rounded-full bg-brand-gold px-3 py-1.5 text-sm text-black">
+                <button className="min-h-11 w-full rounded-full bg-brand-gold px-3 py-2 text-sm text-black sm:w-auto">
                   Send time to customer
                 </button>
               </form>

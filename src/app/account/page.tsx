@@ -144,9 +144,9 @@ export default function OrderHomePage() {
   }
 
   return (
-    <div className="pb-10">
+    <div className="page-bottom">
       <div className="border-b border-white/10 bg-charcoal/70">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-4 sm:px-6">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 page-pad py-4">
           <div>
             <p className="text-xs uppercase tracking-[0.22em] text-brand-gold">Hi {firstName}</p>
             <p className="font-display text-xl font-semibold leading-tight sm:text-xl">Wokora Foods</p>
@@ -176,7 +176,7 @@ export default function OrderHomePage() {
         </div>
       </div>
 
-      <div className="mx-auto max-w-6xl px-4 sm:px-6">
+      <div className="mx-auto max-w-6xl page-pad">
         {latestUnpaid ? (
           <div className="mt-5">
             <OrderBill order={latestUnpaid} compact onReorder={() => reorder(latestUnpaid)} />

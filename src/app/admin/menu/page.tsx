@@ -232,7 +232,7 @@ function AdminMenuInner() {
           </div>
         </div>
       ) : (
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
           <div className="min-w-0 flex-1 text-left">
             <span className="flex items-start gap-2">
               <span
@@ -242,13 +242,13 @@ function AdminMenuInner() {
               >
                 <span className={`h-2 w-2 ${item.isVeg ? "rounded-full bg-green-500" : "bg-red-500"}`} />
               </span>
-              <span>
-                <span className="block font-display text-base font-semibold leading-tight">{item.name}</span>
+              <span className="min-w-0">
+                <span className="block font-display text-base font-semibold leading-tight line-clamp-2">{item.name}</span>
                 <span className="mt-1 block font-display text-sm text-brand-gold">{formatINR(item.price)}</span>
               </span>
             </span>
           </div>
-          <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 text-sm">
+          <div className="flex flex-wrap items-center gap-2 text-sm sm:justify-end">
             {isDraft ? <span className="text-xs text-brand-red">Draft</span> : null}
             <button
               type="button"
@@ -318,8 +318,8 @@ function AdminMenuInner() {
 
   if (plate) {
     return (
-      <div className="mx-auto max-w-7xl px-4 py-5 sm:px-6 sm:py-6">
-        <div className="mb-4 flex items-center gap-3">
+      <div className="page-bottom mx-auto max-w-7xl page-pad py-5 sm:py-6">
+        <div className="mb-4 flex flex-wrap items-center gap-3">
           <Link
             href={`/admin/menu?diet=${diet}`}
             className="rounded-full border border-white/10 p-2 text-brand-cream/70 hover:text-white"
@@ -328,26 +328,28 @@ function AdminMenuInner() {
           </Link>
           <div className="min-w-0 flex-1">
             <p className="text-[11px] uppercase tracking-[0.18em] text-brand-gold">Wok list</p>
-            <h1 className="font-display text-2xl font-bold sm:text-3xl">{title}</h1>
+            <h1 className="truncate font-display text-2xl font-bold sm:text-3xl">{title}</h1>
           </div>
-          <button type="button" onClick={() => setShowAdd(true)} className="btn-glow shrink-0 px-4 py-2 text-sm">
-            + Add item
-          </button>
-          <button
-            type="button"
-            onClick={removeCategory}
-            className="shrink-0 rounded-full border border-brand-red/40 px-3 py-2 text-sm text-brand-red"
-          >
-            Delete category
-          </button>
+          <div className="flex w-full flex-wrap gap-2 sm:w-auto sm:justify-end">
+            <button type="button" onClick={() => setShowAdd(true)} className="btn-glow flex-1 px-4 py-2 text-sm sm:flex-none">
+              + Add item
+            </button>
+            <button
+              type="button"
+              onClick={removeCategory}
+              className="flex-1 rounded-full border border-brand-red/40 px-3 py-2 text-sm text-brand-red sm:flex-none"
+            >
+              Delete category
+            </button>
+          </div>
         </div>
         {message ? <p className="mb-3 text-sm text-brand-gold">{message}</p> : null}
 
-        <div className="sticky top-14 z-30 mb-5 flex items-center gap-2 rounded-2xl border border-white/10 bg-ink/95 px-2 py-1.5 backdrop-blur sm:top-16">
-          <div className="min-w-0 flex-1 overflow-x-auto no-scrollbar">
+        <div className="menu-toolbar mb-5">
+          <div className="min-w-0 flex-1">
             <DietToggle value={diet} onChange={changeDiet} />
           </div>
-          <form onSubmit={(event: FormEvent) => event.preventDefault()} className="relative w-[6.75rem] shrink-0 sm:w-44 md:w-52">
+          <form onSubmit={(event: FormEvent) => event.preventDefault()} className="menu-search">
             <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-brand-cream/50" />
             <input
               value={query}
@@ -433,7 +435,7 @@ function AdminMenuInner() {
   }
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-5 sm:px-6 sm:py-6">
+    <div className="page-bottom mx-auto max-w-7xl page-pad py-5 sm:py-6">
       <header>
         <div>
           <p className="font-wall text-sm text-brand-gold sm:text-lg">Taste Talks Here</p>
@@ -442,18 +444,18 @@ function AdminMenuInner() {
       </header>
       {message ? <p className="mt-3 text-sm text-brand-gold">{message}</p> : null}
 
-      <div className="sticky top-14 z-30 mt-3 flex items-center gap-2 rounded-2xl border border-white/10 bg-ink/95 px-2 py-1.5 backdrop-blur sm:top-16 sm:gap-3 sm:px-2.5">
-        <div className="min-w-0 flex-1 overflow-x-auto no-scrollbar">
+      <div className="menu-toolbar mt-3">
+        <div className="min-w-0 flex-1">
           <DietToggle value={diet} onChange={changeDiet} />
         </div>
         <button
           type="button"
           onClick={() => setShowNewCategory(true)}
-          className="btn-glow shrink-0 px-3 py-1.5 text-xs sm:px-4 sm:py-2 sm:text-sm"
+          className="btn-glow w-full shrink-0 px-3 py-2 text-sm sm:w-auto"
         >
           Add category
         </button>
-        <form onSubmit={(event) => event.preventDefault()} className="relative w-[6.75rem] shrink-0 sm:w-44 md:w-56 lg:w-72">
+        <form onSubmit={(event) => event.preventDefault()} className="menu-search">
           <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-brand-cream/50 sm:left-3 sm:h-4 sm:w-4" />
           <input
             value={query}

@@ -1,11 +1,17 @@
 import { z } from "zod";
 
+export const passwordSchema = z
+  .string()
+  .min(6)
+  .regex(/[A-Z]/)
+  .regex(/[^A-Za-z0-9]/);
+
 export const registerSchema = z.object({
-  name: z.string().min(2, "Name is too short"),
-  phone: z.string().min(10, "Enter a valid 10-digit Indian mobile number"),
-  email: z.string().email("Enter a valid email"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
-  otp: z.string().min(4, "Enter the email OTP"),
+  name: z.string().trim().regex(/^[A-Za-z]+(?: [A-Za-z]+)*$/),
+  phone: z.string().regex(/^\d{10}$/),
+  email: z.string().email(),
+  password: passwordSchema,
+  otp: z.string().min(4),
 });
 
 export const loginSchema = z

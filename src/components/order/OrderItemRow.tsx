@@ -43,7 +43,7 @@ export function OrderItemRow({
 
   return (
     <article className="flex items-start gap-3 border-b border-white/10 py-4 last:border-b-0 sm:items-center sm:gap-4">
-      <button type="button" onClick={openPanel} className="relative h-16 w-16 shrink-0 overflow-hidden rounded-full sm:h-[88px] sm:w-[88px] md:h-28 md:w-28">
+      <button type="button" onClick={openPanel} className="relative h-16 w-16 shrink-0 overflow-hidden rounded-full sm:h-[88px] sm:w-[88px] lg:h-28 lg:w-28">
         {broken ? (
           <div className="grid h-full w-full place-items-center bg-brand-red/30 text-center text-xs">{item.name}</div>
         ) : (
@@ -61,7 +61,7 @@ export function OrderItemRow({
             <span className={`h-2 w-2 ${item.isVeg ? "rounded-full bg-green-500" : "bg-red-500"}`} />
           </span>
           <div className="min-w-0">
-            <h3 className="font-display text-base font-semibold leading-tight sm:text-lg">{item.name}</h3>
+            <h3 className="line-clamp-2 font-display text-base font-semibold leading-tight sm:text-lg">{item.name}</h3>
             {item.description && (
               <p className="mt-1 line-clamp-2 text-sm text-brand-cream/55">{item.description}</p>
             )}

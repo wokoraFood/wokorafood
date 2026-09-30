@@ -82,7 +82,7 @@ export function Footer() {
       <div className="pointer-events-none absolute -left-24 top-10 h-64 w-64 rounded-full bg-brand-red/15 blur-3xl" />
       <div className="pointer-events-none absolute -right-16 bottom-0 h-72 w-72 rounded-full bg-brand-gold/10 blur-3xl" />
 
-      <div className="relative mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-16">
+      <div className="relative mx-auto max-w-7xl page-pad py-10 sm:py-16">
         <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-lg">
             <Logo />
@@ -106,7 +106,7 @@ export function Footer() {
 
         <div className="mt-10">
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-brand-cream/45">Jump to a plate</p>
-          <div className="mt-4 grid grid-cols-3 gap-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-9">
+          <div className="mt-4 grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-9">
             {CATEGORY_META.map((category) => (
               <MenuJump
                 key={category.slug}
@@ -123,7 +123,7 @@ export function Footer() {
                     className="object-cover transition duration-500 group-hover:scale-110"
                   />
                   <span className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
-                  <span className="absolute inset-x-1 bottom-1 text-center font-display text-[10px] font-semibold leading-tight text-white sm:text-xs">
+                  <span className="absolute inset-x-1 bottom-1 line-clamp-2 text-center font-display text-[10px] font-semibold leading-tight text-white sm:text-xs">
                     {category.name}
                   </span>
                 </span>
@@ -144,8 +144,8 @@ export function Footer() {
               <Phone className="h-4 w-4 text-brand-red" />
               {BRAND.phone}
             </a>
-            <a href={`mailto:${BRAND.email}`} className="flex items-center gap-2 hover:text-brand-gold">
-              <Mail className="h-4 w-4 text-brand-red" />
+            <a href={`mailto:${BRAND.email}`} className="flex min-w-0 items-center gap-2 break-all hover:text-brand-gold">
+              <Mail className="h-4 w-4 shrink-0 text-brand-red" />
               {BRAND.email}
             </a>
             <div className="flex gap-2 pt-1">

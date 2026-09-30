@@ -41,12 +41,12 @@ const PLATE_COPY: Record<string, string> = {
 const PILLARS = [
   {
     title: "Our food, our name",
-    copy: "Everything on the menu is Wokora Foods. Nine food types, cooked in our kitchen — not a food court mix.",
+    copy: "Every plate says Wokora Foods. Nine types from our kitchen — wok steam, grill char, chilli-gold — not a food-court mix.",
     icon: ChefHat,
   },
   {
     title: "Sit and order",
-    copy: "Take a table, open the menu on your phone, and we bring the food to you. No counter queue.",
+    copy: "Take a red booth, open the menu on your phone, tap the plate. The kitchen prints the ticket. Food walks to you.",
     icon: Sofa,
   },
   {
@@ -82,7 +82,7 @@ const STEPS = [
 const FAQS = [
   {
     q: "What is Wokora Foods?",
-    a: `Wokora Foods is our cafe brand. We cook a short menu of nine food types and serve it at your table in ${BRAND.location}.`,
+    a: `Wokora Foods is the night cafe in ${BRAND.location}. Nine plates, our kitchen, our name — you sit in the booth, tap the menu, and we serve the wok to your table.`,
   },
   {
     q: "What can I eat here?",
@@ -125,13 +125,13 @@ export default function AboutPage() {
             </motion.h1>
             <p className="mt-3 font-display text-xl font-semibold text-brand-cream sm:text-2xl">{BRAND.tagline}</p>
             <p className="mt-5 max-w-xl text-base leading-relaxed text-white/80 sm:text-lg">
-              {BRAND.name} is a sit-down cafe. We cook nine kinds of food under our own name, mark veg
-              and non-veg clearly, and serve you at the table. You order on your phone. We do the rest.
+              Wokora is the wok and the aura around it. Nine plates, our kitchen, our name. Green-dot
+              veg. Red-mark heat. You sit in the booth, tap the menu, and we serve the night to your table.
             </p>
             <div className="mt-6 flex flex-wrap gap-2 text-sm text-white/70">
-              <span className="rounded-full border border-white/15 bg-white/5 px-3 py-1.5">9 food types</span>
-              <span className="rounded-full border border-white/15 bg-white/5 px-3 py-1.5">Veg &amp; chicken marked</span>
-              <span className="rounded-full border border-white/15 bg-white/5 px-3 py-1.5">Served at your table</span>
+              <span className="rounded-full border border-white/15 bg-white/5 px-3 py-1.5">Nine plates. Our kitchen.</span>
+              <span className="rounded-full border border-white/15 bg-white/5 px-3 py-1.5">Green-dot veg. Red-mark heat.</span>
+              <span className="rounded-full border border-white/15 bg-white/5 px-3 py-1.5">Booth tap. Table serve.</span>
             </div>
             <div className="mt-8 flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:flex-wrap">
               <Link href="/menu" className="btn-glow px-7 py-3 text-center">
@@ -184,10 +184,10 @@ export default function AboutPage() {
 
       <section id="who" className="scroll-mt-28 mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-gold">Who we are</p>
-        <h2 className="heading-underline mt-2 font-display text-3xl font-bold sm:text-4xl">A cafe. Our kitchen. Our menu.</h2>
+        <h2 className="heading-underline mt-2 font-display text-3xl font-bold sm:text-4xl">The name on the door is the name on the plate.</h2>
         <p className="mt-6 max-w-2xl text-base leading-relaxed text-brand-cream/75 sm:text-lg">
-          {BRAND.name} is the name on the door and on every dish we cook. Come in with friends, sit
-          down, and eat from one menu — cooked here, served here.
+          Walk into Shop 23, Siddharth Vihar. Red booths, gold light, one wok list. Friends, phones,
+          tickets printing at the counter — that is a Wokora night. Taste talks here. Mood follows.
         </p>
         <div className="mt-10 grid gap-4 md:grid-cols-3">
           {PILLARS.map((item, index) => (
@@ -209,7 +209,7 @@ export default function AboutPage() {
 
       <section id="menu" className="scroll-mt-28 border-y border-white/10 bg-black/35 py-16 sm:py-20">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
-          <div className="flex flex-wrap items-end justify-between gap-4">
+          <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-gold">What we cook</p>
               <h2 className="heading-underline mt-2 font-display text-3xl font-bold sm:text-4xl">Nine food types. That is the full menu.</h2>
@@ -217,11 +217,11 @@ export default function AboutPage() {
                 Tap any card to open that section. Inside, you will see dish names, veg or non-veg, and the price.
               </p>
             </div>
-            <Link href="/menu" className="rounded-full border border-white/15 px-5 py-2 text-sm text-brand-gold hover:border-brand-gold">
+            <Link href="/menu" className="min-h-11 w-full rounded-full border border-white/15 px-5 py-2 text-center text-sm text-brand-gold hover:border-brand-gold sm:w-auto">
               Open full menu
             </Link>
           </div>
-          <div className="mt-8 grid grid-cols-2 gap-3 md:grid-cols-3">
+          <div className="mt-8 grid grid-cols-2 gap-3 lg:grid-cols-3">
             {MENU_CATEGORIES.map((category, index) => (
               <motion.div
                 key={category.slug}

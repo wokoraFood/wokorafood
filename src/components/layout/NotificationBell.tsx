@@ -110,7 +110,7 @@ export function NotificationBell() {
         )}
       </button>
       {open && (
-        <div className="absolute right-0 mt-2 w-80 rounded-2xl border border-white/10 bg-ink p-3 shadow-neon">
+        <div className="absolute right-0 mt-2 w-[min(20rem,calc(100vw-1.25rem))] rounded-2xl border border-white/10 bg-ink p-3 shadow-neon">
           <p className="px-1 pb-2 text-xs uppercase tracking-wide text-brand-cream/50">Notifications</p>
           <div className="max-h-80 space-y-2 overflow-y-auto">
             {notes.length === 0 && <p className="p-3 text-sm text-brand-cream/50">No updates yet.</p>}

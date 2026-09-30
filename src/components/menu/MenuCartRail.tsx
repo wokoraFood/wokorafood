@@ -18,7 +18,7 @@ export function MenuCartRail() {
   const total = subtotal + tax;
 
   return (
-    <aside className="card-surface sticky top-20 hidden h-fit max-h-[calc(100vh-6rem)] flex-col overflow-hidden lg:flex">
+    <aside className="card-surface sticky top-20 hidden h-fit max-h-[calc(100vh-6rem)] flex-col overflow-hidden md:flex">
       <div className="border-b border-white/10 px-5 py-4">
         <p className="font-display text-xl font-semibold">{isAdmin ? "Kitchen" : "Your order"}</p>
         <p className="mt-1 text-xs text-brand-cream/50">
@@ -42,9 +42,9 @@ export function MenuCartRail() {
             {items.map((item) => (
               <li key={item.id} className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="font-display text-sm font-semibold leading-tight">{item.name}</p>
+                  <p className="truncate font-display text-sm font-semibold leading-tight">{item.name}</p>
                   {item.customization ? (
-                    <p className="mt-0.5 text-[11px] text-brand-cream/45">{item.customization}</p>
+                    <p className="mt-0.5 line-clamp-2 text-[11px] text-brand-cream/45">{item.customization}</p>
                   ) : null}
                   <p className="mt-1 text-xs text-brand-gold">{formatINR(item.price)}</p>
                 </div>

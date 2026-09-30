@@ -38,15 +38,15 @@ export function MobileBottomNav() {
 
   return (
     <>
-      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-ink/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl lg:hidden">
-        <div className="grid grid-cols-4">
+      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-ink/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl md:hidden">
+        <div className="mx-auto grid max-w-lg grid-cols-4">
           {tabs.map((tab) => {
             const active = isActive(pathname, tab.href, (tab as { exact?: boolean }).exact);
             return (
               <Link
                 key={tab.href}
                 href={tab.href}
-                className={`relative flex flex-col items-center gap-1 py-2.5 text-[11px] font-medium ${
+                className={`relative flex min-h-[3.25rem] flex-col items-center justify-center gap-0.5 py-2 text-[10px] font-medium xs:gap-1 xs:text-[11px] ${
                   active ? "text-brand-gold" : "text-brand-cream/55"
                 }`}
               >
@@ -62,7 +62,7 @@ export function MobileBottomNav() {
           })}
         </div>
       </nav>
-      <div className="h-[4.25rem] lg:hidden" aria-hidden />
+      <div className="h-[4.25rem] md:hidden" aria-hidden />
     </>
   );
 }

@@ -2,6 +2,8 @@
 
 import { FormEvent, Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { PasswordField } from "@/components/auth/PasswordField";
+import { userFacingError } from "@/lib/publicError";
 
 function ResetForm() {
   const params = useSearchParams();
@@ -18,26 +20,27 @@ function ResetForm() {
       body: JSON.stringify({ token, password }),
     });
     if (!res.ok) {
-      setError("This reset link is invalid or expired.");
+      setError(userFacingError("Reset request expired"));
       return;
     }
     router.push("/login");
   };
 
   return (
-    <div className="mx-auto max-w-md px-4 py-16">
-      <h1 className="heading-underline font-display text-3xl font-bold">New password</h1>
-      <form onSubmit={submit} className="mt-8 space-y-4">
-        <input
-          type="password"
-          value={password}
-          onChange={(event) => setPassword(event.target.value)}
-          placeholder="New password"
-          className="w-full rounded-full border border-white/10 bg-white/5 px-4 py-3 outline-none focus:border-brand-red"
-        />
-        {error && <p className="text-sm text-brand-red">{error}</p>}
-        <button className="btn-glow w-full py-3">Update password</button>
-      </form>
+    <div className="auth-panel min-h-[calc(100svh-3.5rem)] sm:min-h-[calc(100svh-4rem)]">
+      <div className="auth-card">
+        <h1 className="heading-underline font-display text-2xl font-bold xs:text-3xl">New password</h1>
+        <form onSubmit={submit} className="mt-6 space-y-4 xs:mt-8">
+          <PasswordField
+            value={password}
+            onChange={setPassword}
+            placeholder="New password"
+            autoComplete="new-password"
+          />
+          {error && <p className="break-words text-sm text-brand-red">{error}</p>}
+          <button className="btn-glow w-full py-3">Update password</button>
+        </form>
+      </div>
     </div>
   );
 }

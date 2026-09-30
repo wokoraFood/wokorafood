@@ -13,8 +13,8 @@ const FEATURES = [
 export function WhyWokora() {
   return (
     <section className="bg-brand-glow py-12 sm:py-16">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6">
-        <h2 className="heading-underline font-display text-3xl font-bold">Why Wokora Foods</h2>
+      <div className="mx-auto max-w-7xl page-pad">
+        <h2 className="heading-underline font-display text-2xl font-bold sm:text-3xl">Why Wokora Foods</h2>
         <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {FEATURES.map((feature, index) => (
             <motion.article
@@ -23,7 +23,7 @@ export function WhyWokora() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: index * 0.05 }}
-              className="card-surface p-6"
+              className="card-surface p-4 sm:p-6"
             >
               <feature.icon className="h-8 w-8 text-brand-red" />
               <h3 className="mt-4 font-display text-lg font-semibold">{feature.title}</h3>

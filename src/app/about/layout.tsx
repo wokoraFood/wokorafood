@@ -3,7 +3,7 @@ import { BRAND } from "@/lib/constants";
 
 export const metadata: Metadata = {
   title: `About ${BRAND.name}`,
-  description: `${BRAND.name} is a sit-down cafe in ${BRAND.location}. Nine food types, veg and chicken marked clearly, ordered from your phone and served at the table.`,
+  description: `${BRAND.name} is the night cafe in ${BRAND.location} — nine plates, neon booths, green-dot veg and red-mark heat. Order from the table. We serve the wok to you.`,
 };
 
 export default function AboutLayout({ children }: { children: React.ReactNode }) {

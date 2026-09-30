@@ -5,24 +5,24 @@ import { registerSchema } from "@/lib/validations";
 import { verifyOtp } from "@/lib/otp";
 import { normalizePhone } from "@/lib/phone";
 import { DEFAULT_STORE_ID, ensureDefaultStore } from "@/lib/store";
-import { serverErrorJson } from "@/lib/publicError";
+import { SERVER_ERROR, serverErrorJson } from "@/lib/publicError";
 
 export async function POST(request: Request) {
   const body = await request.json();
-  const parsed = registerSchema.safeParse(body);
+  const parsed = registerSchema.safeParse({
+    ...body,
+    phone: typeof body.phone === "string" ? normalizePhone(body.phone) : body.phone,
+    name: typeof body.name === "string" ? body.name.trim().replace(/\s+/g, " ") : body.name,
+    email: typeof body.email === "string" ? body.email.trim().toLowerCase() : body.email,
+  });
 
   if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.flatten().fieldErrors }, { status: 400 });
+    return NextResponse.json({ error: SERVER_ERROR }, { status: 400 });
   }
 
-  const { name, email, password, otp } = parsed.data;
-  const phone = normalizePhone(parsed.data.phone);
-  if (!/^[6-9]\d{9}$/.test(phone)) {
-    return NextResponse.json({ error: "Enter a valid 10-digit Indian mobile number" }, { status: 400 });
-  }
+  const { name, phone, email, password, otp } = parsed.data;
 
-  const normalizedEmail = email.toLowerCase();
-  const otpOk = await verifyOtp(normalizedEmail, otp, "signup");
+  const otpOk = await verifyOtp(email, otp, "signup");
   if (!otpOk) {
     return NextResponse.json({ error: "Invalid or expired email OTP" }, { status: 400 });
   }
@@ -30,7 +30,7 @@ export async function POST(request: Request) {
   try {
   await ensureDefaultStore();
   const exists = await prisma.user.findFirst({
-    where: { storeId: DEFAULT_STORE_ID, OR: [{ phone }, { email: normalizedEmail }] },
+    where: { storeId: DEFAULT_STORE_ID, OR: [{ phone }, { email }] },
   });
 
   if (exists) {
@@ -41,7 +41,7 @@ export async function POST(request: Request) {
     data: {
       name,
       phone,
-      email: normalizedEmail,
+      email,
       passwordHash: await bcrypt.hash(password, 10),
       emailVerified: true,
       storeId: DEFAULT_STORE_ID,

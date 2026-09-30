@@ -120,7 +120,7 @@ export default function PayPage() {
   if (!order) return <div className="px-4 py-20 text-center">Loading payment...</div>;
 
   return (
-    <div className="mx-auto max-w-lg px-4 py-12">
+    <div className="page-bottom mx-auto max-w-lg page-pad py-8 sm:py-12">
       <h1 className="heading-underline font-display text-3xl font-bold">Pay · Wokora Foods</h1>
       <p className="mt-4 text-brand-gold">
         Order {displayOrderNumber(order.serialNumber)} · {formatINR(order.totalAmount)}
@@ -137,7 +137,7 @@ export default function PayPage() {
           </button>
         ))}
       </div>
-      <form onSubmit={pay} className="card-surface mt-6 space-y-5 p-6">
+      <form onSubmit={pay} className="card-surface mt-6 space-y-5 p-4 sm:p-6">
         {method === "upi" ? (
           <div className="space-y-5">
             {!upiReady ? (
@@ -157,7 +157,7 @@ export default function PayPage() {
                   <div className="text-center">
                     <div className="mx-auto w-fit overflow-hidden rounded-2xl bg-white p-3">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={upi.qrDataUrl} alt="Pay Wokora Foods" className="h-48 w-48" />
+                      <img src={upi.qrDataUrl} alt="Pay Wokora Foods" className="mx-auto h-auto w-full max-w-48" />
                     </div>
                     <p className="mt-3 font-display text-lg font-semibold">{upi.payeeName}</p>
                     <p className="mt-1 text-sm text-brand-cream/70">

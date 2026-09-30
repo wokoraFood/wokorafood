@@ -19,7 +19,7 @@ export function GoogleAuthButton({ callbackUrl = "/account" }: { callbackUrl?: s
     <button
       type="button"
       onClick={() => signIn("google", { callbackUrl })}
-      className="mt-3 w-full rounded-full border border-white/15 py-3 text-sm"
+      className="mt-3 min-h-11 w-full rounded-full border border-white/15 px-4 py-3 text-sm"
     >
       Continue with Google
     </button>

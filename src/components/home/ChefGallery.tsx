@@ -6,8 +6,8 @@ import { CATEGORY_META } from "@/lib/constants";
 
 export function ChefGallery() {
   return (
-    <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
-      <div className="flex items-end justify-between gap-4">
+    <section className="mx-auto max-w-7xl page-pad py-12 sm:py-16">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <h2 className="heading-underline font-display text-3xl font-bold">From the wok tonight</h2>
         <Link href="/menu" className="text-sm text-brand-gold">
           Menu
@@ -27,7 +27,7 @@ export function ChefGallery() {
               unoptimized
               className="object-cover transition duration-500 group-hover:scale-110"
             />
-            <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent px-2 py-2 font-display text-sm sm:px-4 sm:py-3 sm:text-base">
+            <span className="absolute inset-x-0 bottom-0 line-clamp-2 bg-gradient-to-t from-black/80 to-transparent px-2 py-2 font-display text-sm sm:px-4 sm:py-3 sm:text-base">
               {category.name}
             </span>
           </Link>

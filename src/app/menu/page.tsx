@@ -67,7 +67,7 @@ function MenuPageInner() {
   };
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-5 sm:px-6 sm:py-6">
+    <div className="page-bottom mx-auto max-w-7xl page-pad py-5 sm:py-6">
       <header>
         <div>
           <p className="font-wall text-sm text-brand-gold sm:text-lg">Taste Talks Here</p>
@@ -77,11 +77,11 @@ function MenuPageInner() {
         </div>
       </header>
 
-      <div className="sticky top-14 z-30 mt-3 flex items-center gap-2 rounded-2xl border border-white/10 bg-ink/95 px-2 py-1.5 backdrop-blur sm:top-16 sm:gap-3 sm:px-2.5">
-        <div className="min-w-0 flex-1 overflow-x-auto no-scrollbar">
+      <div className="menu-toolbar mt-3">
+        <div className="min-w-0 flex-1">
           <DietToggle value={diet} onChange={changeDiet} />
         </div>
-        <form onSubmit={submitSearch} className="relative w-[6.75rem] shrink-0 sm:w-44 md:w-56 lg:w-72">
+        <form onSubmit={submitSearch} className="menu-search">
           <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-brand-cream/50 sm:left-3 sm:h-4 sm:w-4" />
           <input
             value={query}

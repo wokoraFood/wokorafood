@@ -13,8 +13,8 @@ const STEPS = [
 export function HowItWorks() {
   return (
     <section className="bg-brand-glow py-12 sm:py-16">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6">
-        <h2 className="heading-underline font-display text-3xl font-bold">How a Wokora night works</h2>
+      <div className="mx-auto max-w-7xl page-pad">
+        <h2 className="heading-underline font-display text-2xl font-bold sm:text-3xl">How a Wokora night works</h2>
         <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {STEPS.map((step, index) => (
             <motion.article
@@ -23,7 +23,7 @@ export function HowItWorks() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: index * 0.06 }}
-              className="card-surface p-6"
+              className="card-surface p-4 sm:p-6"
             >
               <p className="font-wall text-3xl text-brand-red">0{index + 1}</p>
               <step.icon className="mt-3 h-7 w-7 text-brand-gold" />

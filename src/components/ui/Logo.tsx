@@ -19,7 +19,7 @@ export function Logo({ size = "md" }: { size?: "sm" | "md" | "lg" }) {
         <path d="M10 20l18 16" stroke="#F5A623" strokeWidth="2.4" strokeLinecap="round" />
         <path d="M14 16l18 16" stroke="#F5A623" strokeWidth="2.4" strokeLinecap="round" />
       </svg>
-      <span className={`font-display font-extrabold tracking-tight ${word}`}>
+      <span className={`min-w-0 truncate font-display font-extrabold tracking-tight ${word}`}>
         <span className="text-brand-cream">Wokora</span>
         <span className="text-brand-red"> Foods</span>
       </span>

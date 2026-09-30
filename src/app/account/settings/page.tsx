@@ -52,7 +52,7 @@ export default function SettingsPage() {
       ) : null}
 
       <div className="mt-8">
-        <div className="flex items-end justify-between gap-3">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
           <h2 className="font-display text-xl font-semibold">Bills & payments</h2>
           <Link href="/account/orders" className="text-sm text-brand-gold">
             All bills →
@@ -113,7 +113,7 @@ export default function SettingsPage() {
           />
         </label>
         {message && <p className="text-sm text-brand-gold">{message}</p>}
-        <button className="btn-glow px-6 py-3">Save settings</button>
+        <button className="btn-glow w-full px-6 py-3 sm:w-auto">Save settings</button>
       </form>
     </div>
   );

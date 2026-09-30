@@ -32,8 +32,8 @@ export function DishNameRow({ item }: { item: FoodCardItem }) {
           >
             <span className={`h-2 w-2 ${item.isVeg ? "rounded-full bg-green-500" : "bg-red-500"}`} />
           </span>
-          <span>
-            <span className="block font-display text-base font-semibold leading-tight">{item.name}</span>
+          <span className="min-w-0">
+            <span className="block font-display text-base font-semibold leading-tight line-clamp-2">{item.name}</span>
             <span className="mt-1 block font-display text-sm text-brand-gold">{formatINR(item.price)}</span>
           </span>
         </span>
@@ -48,7 +48,7 @@ export function DishNameRow({ item }: { item: FoodCardItem }) {
           onDecrement={() => decrement(cartItem.id)}
         />
       ) : (
-        <button type="button" onClick={add} className="rounded-full border border-brand-red/50 px-4 py-1.5 text-sm font-semibold text-brand-red hover:bg-brand-red hover:text-white">
+        <button type="button" onClick={add} className="shrink-0 rounded-full border border-brand-red/50 px-4 py-2 text-sm font-semibold text-brand-red hover:bg-brand-red hover:text-white">
           ADD
         </button>
       )}

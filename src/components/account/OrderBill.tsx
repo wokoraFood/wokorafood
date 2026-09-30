@@ -96,13 +96,13 @@ export function OrderBill({
           <ul className="mt-4 space-y-2 border-y border-dashed border-white/15 py-4 text-sm">
           {order.items.map((item, index) => (
             <li key={item.id || `${item.menuItem.name}-${index}`} className="flex justify-between gap-3">
-              <span>
+              <span className="min-w-0 flex-1 break-words pr-2">
                 {item.quantity} × {item.menuItem.name}
                 {item.customization ? (
-                  <span className="mt-0.5 block text-xs text-brand-gold/80">{item.customization}</span>
+                  <span className="mt-0.5 block break-words text-xs text-brand-gold/80">{item.customization}</span>
                 ) : null}
               </span>
-              <span>{formatINR((item.priceAtOrder ?? item.menuItem.price ?? 0) * item.quantity)}</span>
+              <span className="shrink-0">{formatINR((item.priceAtOrder ?? item.menuItem.price ?? 0) * item.quantity)}</span>
             </li>
           ))}
         </ul>

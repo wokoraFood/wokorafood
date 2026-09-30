@@ -122,7 +122,7 @@ export function ExploreMenu({
 function KitchenItemRow({ item }: { item: CatalogItem }) {
   return (
     <article className="flex items-start gap-3 py-4 last:pb-4 sm:items-center sm:gap-4">
-      <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-full bg-white/5 sm:h-[88px] sm:w-[88px] md:h-28 md:w-28">
+      <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-full bg-white/5 sm:h-[88px] sm:w-[88px] lg:h-28 lg:w-28">
         {item.imageUrl ? (
           <Image src={item.imageUrl} alt={item.name} fill unoptimized className="object-cover" />
         ) : (

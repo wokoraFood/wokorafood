@@ -24,12 +24,14 @@ const bebas = Bebas_Neue({
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: `${BRAND.name} | ${BRAND.tagline}`,
-  description: `${BRAND.subTagline}. ${BRAND.name} at ${BRAND.location} — momos, noodles, burgers, and cafe classics.`,
+  description: `${BRAND.subTagline}. ${BRAND.name} at ${BRAND.location}. Momos, noodles, burgers, and cafe classics.`,
 };
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
+  maximumScale: 5,
+  userScalable: true,
   viewportFit: "cover",
 };
 
@@ -54,10 +56,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />
       </head>
-          <body className="min-h-screen overflow-x-clip bg-ink font-body text-brand-cream antialiased">
+          <body className="min-h-svh overflow-x-clip bg-ink font-body text-brand-cream antialiased">
         <AppProviders>
           <Navbar />
-          <main className="min-w-0">{children}</main>
+          <main className="min-w-0 pb-[env(safe-area-inset-bottom,0px)]">{children}</main>
           <Footer />
           <StickyCartBar />
           <MobileBottomNav />

@@ -65,7 +65,7 @@ export default function SupportPage() {
           Call<br /><span className="text-brand-gold">{BRAND.phone}</span>
         </a>
         <a href={`mailto:${BRAND.email}`} className="card-surface p-4 text-sm">
-          Email<br /><span className="text-brand-gold">{BRAND.email}</span>
+          Email<br /><span className="break-all text-brand-gold">{BRAND.email}</span>
         </a>
         <a
           href={`https://wa.me/${brandWhatsApp()}?text=${encodeURIComponent("Hi Wokora Foods, I need some help.")}`}
@@ -99,16 +99,16 @@ export default function SupportPage() {
           className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 outline-none focus:border-brand-red"
         />
         {done && <p className="text-sm text-brand-gold">{done}</p>}
-        <button className="btn-glow px-6 py-3">Send ticket</button>
+        <button className="btn-glow w-full px-6 py-3 sm:w-auto">Send ticket</button>
       </form>
 
       <div className="mt-10 space-y-4">
         <h2 className="font-display text-xl">Your cases</h2>
         {tickets.map((ticket) => (
           <article key={ticket.id} className="card-surface p-4">
-            <div className="flex justify-between gap-3">
-              <p className="font-display">{ticket.subject}</p>
-              <span className="text-xs uppercase text-brand-gold">{ticket.status}</span>
+            <div className="flex flex-col gap-2 sm:flex-row sm:justify-between">
+              <p className="min-w-0 break-words font-display">{ticket.subject}</p>
+              <span className="shrink-0 text-xs uppercase text-brand-gold">{ticket.status}</span>
             </div>
             <p className="mt-2 text-sm text-brand-cream/70">{ticket.message}</p>
             {ticket.replies.map((row) => (
@@ -117,16 +117,16 @@ export default function SupportPage() {
                 {row.message}
               </p>
             ))}
-            <div className="mt-3 flex gap-2">
+            <div className="mt-3 flex flex-col gap-2 sm:flex-row">
               <input
                 value={reply[ticket.id] || ""}
                 onChange={(event) => setReply((current) => ({ ...current, [ticket.id]: event.target.value }))}
                 placeholder="Reply to kitchen"
-                className="flex-1 rounded-full border border-white/10 bg-white/5 px-3 py-2 text-sm"
+                className="min-w-0 flex-1 rounded-full border border-white/10 bg-white/5 px-3 py-2 text-sm"
               />
               <button
                 type="button"
-                className="rounded-full border border-brand-gold/40 px-3 py-2 text-sm text-brand-gold"
+                className="min-h-11 shrink-0 rounded-full border border-brand-gold/40 px-4 py-2 text-sm text-brand-gold"
                 onClick={async () => {
                   if (!reply[ticket.id]) return;
                   await fetch(`/api/support/${ticket.id}`, {

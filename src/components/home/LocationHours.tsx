@@ -10,13 +10,13 @@ export function LocationHours() {
 
   return (
     <section id="visit" className="dark-band bg-[#0d0d0d] py-16">
-      <div className="mx-auto grid max-w-7xl gap-8 px-4 sm:px-6 lg:grid-cols-2">
+      <div className="mx-auto grid max-w-7xl gap-8 page-pad lg:grid-cols-2">
         <div>
           <h2 className="heading-underline font-display text-3xl font-bold">Find us</h2>
           <div className="mt-8 space-y-5 text-brand-cream/80">
-            <p className="flex gap-3">
+            <p className="flex min-w-0 gap-3">
               <MapPin className="mt-1 h-5 w-5 shrink-0 text-brand-red" />
-              {address}
+              <span className="min-w-0 break-words">{address}</span>
             </p>
             <p className="flex gap-3">
               <Phone className="mt-1 h-5 w-5 text-brand-red" />

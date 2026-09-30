@@ -80,7 +80,7 @@ export default function KitchenSettingsPage() {
   };
 
   return (
-    <div className="mx-auto max-w-6xl space-y-12 px-4 py-10">
+    <div className="page-bottom mx-auto max-w-6xl space-y-10 page-pad py-6 sm:space-y-12 sm:py-10">
       <section>
         <h1 className="heading-underline font-display text-3xl font-bold">Kitchen settings</h1>
         <p className="mt-3 text-sm text-brand-cream/60">
@@ -99,7 +99,7 @@ export default function KitchenSettingsPage() {
             Customer checkout shows Wokora Foods only. Bank settlement is stored on the server, not in the browser.
           </p>
           {saved && <p className="text-sm text-brand-gold md:col-span-2">{saved}</p>}
-          <button className="btn-glow w-fit px-5 py-2">Save shop</button>
+          <button className="btn-glow w-full px-5 py-2 sm:w-fit">Save shop</button>
           <Link href="/admin/menu" className="self-center text-sm text-brand-gold">Edit menu →</Link>
         </form>
       </section>
@@ -133,17 +133,17 @@ export default function KitchenSettingsPage() {
                 placeholder="Reply to customer..."
                 className="mt-4 w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-sm"
               />
-              <div className="mt-3 flex flex-wrap gap-2 text-sm">
-                <button onClick={() => sendReply(ticket.id, "replied")} className="btn-glow px-4 py-1.5">
+              <div className="mt-3 flex flex-col gap-2 text-sm sm:flex-row sm:flex-wrap">
+                <button onClick={() => sendReply(ticket.id, "replied")} className="btn-glow w-full px-4 py-2 sm:w-auto">
                   Send reply
                 </button>
-                <button onClick={() => setStatus(ticket.id, "open")} className="rounded-full border border-white/15 px-3 py-1">
+                <button onClick={() => setStatus(ticket.id, "open")} className="min-h-11 rounded-full border border-white/15 px-3 py-2 sm:min-h-0">
                   Mark open
                 </button>
-                <button onClick={() => setStatus(ticket.id, "in_progress")} className="rounded-full border border-white/15 px-3 py-1">
+                <button onClick={() => setStatus(ticket.id, "in_progress")} className="min-h-11 rounded-full border border-white/15 px-3 py-2 sm:min-h-0">
                   In progress
                 </button>
-                <button onClick={() => setStatus(ticket.id, "closed")} className="rounded-full border border-brand-red/40 px-3 py-1 text-brand-red">
+                <button onClick={() => setStatus(ticket.id, "closed")} className="min-h-11 rounded-full border border-brand-red/40 px-3 py-2 text-brand-red sm:min-h-0">
                   Close case
                 </button>
               </div>

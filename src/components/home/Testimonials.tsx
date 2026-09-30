@@ -20,10 +20,10 @@ export function Testimonials() {
   const review = REVIEWS[index];
 
   return (
-    <section className="mx-auto max-w-4xl px-4 py-12 text-center sm:px-6 sm:py-16">
+    <section className="mx-auto max-w-4xl page-pad py-12 text-center sm:py-16">
       <h2 className="heading-underline font-display text-3xl font-bold">Taste talks here</h2>
       <blockquote className="card-surface mt-8 px-5 py-8 sm:px-8 sm:py-10">
-        <p className="font-display text-xl text-white sm:text-2xl">“{review.quote}”</p>
+        <p className="break-words font-display text-lg text-white sm:text-2xl">“{review.quote}”</p>
         <p className="mt-4 text-brand-gold">{review.name} · {"★".repeat(review.rating)}</p>
       </blockquote>
     </section>

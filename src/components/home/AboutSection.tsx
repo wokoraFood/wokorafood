@@ -9,7 +9,7 @@ export function AboutSection() {
   const photos = [MENU_CATEGORIES[0], MENU_CATEGORIES[2], MENU_CATEGORIES[4]];
 
   return (
-    <section id="about" className="mx-auto max-w-7xl px-4 py-20 sm:px-6">
+    <section id="about" className="mx-auto max-w-7xl page-pad py-14 sm:py-20">
       <div className="grid items-center gap-10 lg:grid-cols-2">
         <div className="grid grid-cols-2 gap-3">
           <Image
@@ -40,11 +40,11 @@ export function AboutSection() {
           </div>
         </div>
         <div>
-          <h2 className="heading-underline font-display text-3xl font-bold">A cafe that tastes like a night out</h2>
+          <h2 className="heading-underline font-display text-3xl font-bold">Where the wok wears neon</h2>
           <p className="mt-6 text-brand-cream/75">
-            Wokora Foods is a sit-down cafe at {BRAND.location} — nine food types only: burgers,
-            coffee, momos, spring rolls, noodles, chilli potato, fried rice, wraps and chicken
-            lollipop. Order from your phone at the table. We bring the food to you.
+            Wokora Foods is a night cafe in {BRAND.location} — not a food-court mix. Nine plates under
+            one name: momo steam, hakka bite, peri-peri on the burger, chilli-gold on potato, coffee in
+            the glow. You order from the booth. We walk the plate to your table.
           </p>
           <div className="mt-8 grid grid-cols-2 gap-2 sm:grid-cols-3">
             {MENU_CATEGORIES.map((category) => (
@@ -53,7 +53,7 @@ export function AboutSection() {
                 initial={{ opacity: 0, y: 8 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                className="rounded-xl border border-white/10 bg-white/5 px-2 py-2 text-center font-display text-[11px] font-semibold sm:px-3 sm:py-3 sm:text-sm"
+                className="line-clamp-2 break-words rounded-xl border border-white/10 bg-white/5 px-1.5 py-2 text-center font-display text-[11px] font-semibold sm:px-3 sm:py-3 sm:text-sm"
               >
                 {category.name}
               </motion.p>

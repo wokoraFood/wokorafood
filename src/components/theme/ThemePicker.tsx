@@ -45,7 +45,7 @@ export function ThemePicker({ compact = false }: { compact?: boolean }) {
               key={option.id}
               type="button"
               onClick={() => choose(option.id)}
-              className={`flex flex-col items-center gap-1.5 rounded-2xl border px-2 py-3 text-center text-xs font-medium transition ${
+              className={`flex min-h-[4.5rem] flex-col items-center justify-center gap-1.5 rounded-2xl border px-1.5 py-3 text-center text-[10px] font-medium leading-tight sm:text-xs ${
                 active
                   ? "border-brand-red bg-brand-red/15 text-brand-gold"
                   : "border-white/10 bg-white/5 text-brand-cream/70 hover:border-white/25"

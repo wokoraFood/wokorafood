@@ -19,7 +19,7 @@ export function Hero() {
       <div className="absolute -left-20 top-10 h-72 w-72 rounded-full bg-brand-red/30 blur-3xl" />
       <div className="absolute bottom-0 right-0 h-80 w-80 rounded-full bg-brand-gold/20 blur-3xl" />
 
-      <div className="relative mx-auto flex min-h-[78svh] max-w-7xl flex-col justify-center px-4 py-16 sm:min-h-[85svh] sm:px-6 sm:py-24 lg:min-h-[92vh]">
+      <div className="relative mx-auto flex min-h-[78svh] max-w-7xl flex-col justify-center page-pad py-14 xs:py-16 sm:min-h-[85svh] sm:py-24 lg:min-h-[92vh]">
         <motion.p initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="font-wall text-xl text-brand-gold sm:text-3xl lg:text-4xl">
           {BRAND.subTagline}
         </motion.p>
@@ -31,8 +31,7 @@ export function Hero() {
           {BRAND.tagline}
         </motion.h1>
         <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-5 max-w-xl text-base text-white/80 sm:mt-6 sm:text-lg">
-          Burgers, momos, spring rolls, noodles, chilli potato, fried rice, wraps, lollipop and coffee —
-          ordered from the booth. Kitchen prints the ticket.
+        Every table has its own rhythm — clinking glasses, sizzling woks, nights that stretch past midnight.
         </motion.p>
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="mt-7 flex w-full flex-col gap-3 sm:mt-8 sm:w-auto sm:flex-row sm:flex-wrap">
           <Link href="/menu" className="btn-glow px-7 py-3 text-center">View Menu</Link>

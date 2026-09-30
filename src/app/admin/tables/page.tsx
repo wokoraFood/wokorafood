@@ -14,7 +14,7 @@ export default function TableQrPage() {
   }, [table]);
 
   return (
-    <div className="mx-auto max-w-lg px-4 py-12 text-center">
+    <div className="page-bottom mx-auto max-w-lg page-pad py-8 text-center sm:py-12">
       <h1 className="heading-underline font-display text-3xl font-bold">Table QR codes</h1>
       <select
         value={table}
@@ -31,8 +31,8 @@ export default function TableQrPage() {
         <div className="card-surface mx-auto mt-8 w-fit p-6">
           {/* QR is a generated data URL — next/image is not needed */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={qr.dataUrl} alt={`QR for table ${table}`} className="h-56 w-56" />
-          <p className="mt-3 text-xs text-brand-cream/60">{qr.url}</p>
+          <img src={qr.dataUrl} alt={`QR for table ${table}`} className="mx-auto h-auto w-full max-w-56" />
+          <p className="mt-3 break-all px-1 text-left text-xs text-brand-cream/60">{qr.url}</p>
         </div>
       )}
     </div>

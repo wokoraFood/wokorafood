@@ -126,7 +126,7 @@ export function CustomizeItemPanel({
   return (
     <div className="fixed inset-0 z-[80]">
       <button type="button" aria-label="Close customization" className="absolute inset-0 bg-black/65" onClick={onClose} />
-      <section className="absolute inset-x-0 bottom-0 flex max-h-[min(92dvh,40rem)] flex-col overflow-hidden rounded-t-3xl border border-white/10 bg-charcoal shadow-[0_-20px_60px_rgba(0,0,0,0.45)] sm:max-h-[90vh] md:inset-y-0 md:left-auto md:right-0 md:h-full md:w-[min(28rem,100vw)] md:max-h-none md:rounded-none md:rounded-l-3xl md:border-l">
+      <section className="absolute inset-x-0 bottom-0 flex max-h-[min(92dvh,40rem)] flex-col overflow-hidden rounded-t-3xl border border-white/10 bg-charcoal shadow-[0_-20px_60px_rgba(0,0,0,0.45)] sm:max-h-[90vh] lg:inset-y-0 lg:left-auto lg:right-0 lg:h-full lg:w-[min(28rem,100vw)] lg:max-h-none lg:rounded-none lg:rounded-l-3xl lg:border-l">
         <header className="flex items-start gap-3 border-b border-white/10 px-4 py-4">
           <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-2xl">
             <Image src={item.imageUrl} alt={item.name} fill unoptimized className="object-cover" />
@@ -197,8 +197,8 @@ export function CustomizeItemPanel({
             onIncrement={() => setQuantity((value) => Math.min(20, value + 1))}
             onDecrement={() => setQuantity((value) => Math.max(1, value - 1))}
           />
-          <button type="button" onClick={addToCart} className="btn-glow min-w-0 flex-1 px-3 py-3 text-sm sm:px-4">
-            Add to Cart — {formatINR(lineTotal)}
+          <button type="button" onClick={addToCart} className="btn-glow min-w-0 flex-1 px-3 py-3 text-xs sm:px-4 sm:text-sm">
+            <span className="truncate">Add to Cart — {formatINR(lineTotal)}</span>
           </button>
         </div>
       </section>
